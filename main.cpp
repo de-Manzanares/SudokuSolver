@@ -1,23 +1,33 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <cassert>
 #include <iostream>
 #include <list>
 #include <map>
 #include <unordered_set>
 #include <vector>
 
+// easy
 // std::vector<int> puzzle = {4, 8, 1, 3, 0, 0, 0, 7, 0, 5, 0, 7, 9, 8, 2, 0, 0,
 //                            0, 3, 0, 0, 1, 0, 0, 0, 6, 8, 0, 3, 0, 0, 0, 0, 1,
 //                            8, 5, 0, 9, 0, 0, 2, 5, 0, 0, 4, 0, 7, 0, 4, 0, 3,
 //                            0, 0, 9, 0, 0, 0, 2, 9, 0, 8, 0, 0, 6, 1, 2, 0, 0,
 //                            0, 4, 0, 0, 0, 0, 8, 0, 4, 7, 2, 1, 0};
 
+// medium
 std::vector<int> puzzle = {0, 0, 0, 0, 0, 2, 8, 0, 6, 3, 0, 1, 0, 0, 0, 2, 0,
                            0, 0, 2, 0, 5, 0, 6, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0,
                            0, 5, 0, 3, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0,
                            3, 0, 0, 0, 0, 9, 0, 6, 0, 5, 0, 0, 0, 4, 0, 0, 0,
                            0, 0, 0, 7, 1, 0, 0, 8, 0, 0, 0, 0, 0};
+
+// hard
+// std::vector<int> puzzle = {2, 9, 1, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 3, 9, 0,
+//                            0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 0, 6, 0, 2, 3, 0, 0,
+//                            9, 0, 0, 5, 7, 0, 6, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+//                            5, 0, 0, 0, 0, 6, 0, 8, 0, 0, 0, 5, 0, 0, 0, 6, 0,
+//                            0, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
 
 static constexpr std::array<int, 3> intersection(const std::array<int, 9> &a,
                                                  const std::array<int, 9> &b) {
@@ -261,6 +271,15 @@ int iterations{};
 int main() {
   print_puzzle();
 
+  try {
+    if (puzzle.size() != 81 || !is_valid()) {
+      throw std::runtime_error("puzzle is malformed");
+    }
+  } catch (const std::exception &e) {
+    std::cerr << e.what() << '\n';
+    std::exit(EXIT_FAILURE);
+  }
+
   bool exists_single_candidates = true;
 
   while (exists_single_candidates) {
@@ -294,17 +313,17 @@ int main() {
     }
 
     // print candidates
-    // std::cout << "\nCandidates:\n";
-    // for (int i = 0; i < candidates.size(); ++i) {
-    //   if (!candidates[i].empty()) {
-    //     std::cout << "Cell " << i << " : ";
-    //     for (const int j : candidates[i]) {
-    //       std::cout << ' ' << j << ' ';
-    //     }
-    //     std::cout << '\n';
-    //   }
-    // }
-    // std::cout << '\n';
+    std::cout << "\nCandidates:\n";
+    for (int i = 0; i < candidates.size(); ++i) {
+      if (!candidates[i].empty()) {
+        std::cout << "Cell " << i << " : ";
+        for (const int j : candidates[i]) {
+          std::cout << ' ' << j << ' ';
+        }
+        std::cout << '\n';
+      }
+    }
+    std::cout << '\n';
 
     // prune list of candidates
 
@@ -313,7 +332,7 @@ int main() {
     // column, that digit cannot appear outside of that block in that row or
     // column.
 
-    // identify if a candidate only appears in one row of a box
+    // identify if a candidate only appears in one row or column of a box
     for (int i = 0; i < 9; ++i) {   // intersections
       for (int j = 0; j < 2; ++j) { // 0: rows, 1: columns
         std::vector<std::vector<int>> set(3);
@@ -335,14 +354,14 @@ int main() {
 
         std::vector<std::vector<int>> unique_candidates(3);
         for (int k = 0; k < 3; ++k) {
-          std::unordered_set<int> seen;
+          std::unordered_set<int> unique;
           for (auto val : set[k]) {
             if (frequency[val] ==
                 std::count(set[k].begin(), set[k].end(), val)) {
-              seen.insert(val);
+              unique.insert(val);
             }
           }
-          unique_candidates[k].assign(seen.begin(), seen.end());
+          unique_candidates[k].assign(unique.begin(), unique.end());
         }
 
         // remove duplicate values
@@ -416,7 +435,158 @@ int main() {
       }
     }
 
-    // identify if a candidate only appears in one row of a box
+    // https://hodoku.sourceforge.net/en/tech_intersections.php
+    // If in a row (or column) all candidates of a certain digit are confined to
+    // one block, that candidate that be eliminated from all other cells in that
+    // block.
+
+    // identify if a candidate only appears in one box or a row or column
+    // rows
+    for (int i = 0; i < 9; ++i) {           // for each row
+      std::vector<std::vector<int>> set(3); // to hold candidates from each box
+      for (int j = 0; j < 9; ++j) {         // for each index in the row
+        if (j < 3) {
+          for (const auto candidate : candidates[indices::rows[i]->at(j)]) {
+            set[0].push_back(candidate); // first box
+          }
+        } else if (j < 6) {
+          for (const auto candidate : candidates[indices::rows[i]->at(j)]) {
+            set[1].push_back(candidate); // second box
+          }
+        } else {
+          for (const auto candidate : candidates[indices::rows[i]->at(j)]) {
+            set[2].push_back(candidate); // third box
+          }
+        }
+      }
+      // find candidates that are in one box but not the others
+      std::map<int, int> frequency;
+      for (const auto &list : set) {
+        for (const auto val : list) {
+          frequency[val]++;
+        }
+      }
+
+      std::vector<std::vector<int>> unique_candidates(3);
+      for (int k = 0; k < 3; ++k) {
+        std::unordered_set<int> unique;
+        for (auto val : set[k]) {
+          if (frequency[val] == std::count(set[k].begin(), set[k].end(), val)) {
+            unique.insert(val);
+          }
+        }
+        unique_candidates[k].assign(unique.begin(), unique.end());
+      }
+
+      // remove duplicates from lists
+      for (auto &list : unique_candidates) {
+        std::sort(list.begin(), list.end());
+        list.erase(std::unique(list.begin(), list.end()), list.end());
+      }
+
+      // if all instances of a candidate in a row are confined to a given block,
+      // then that candidate may be removed from all other cells in that block
+      for (int k = 0; k < 3; ++k) {
+        if (!unique_candidates[k].empty()) {
+          for (const auto val : unique_candidates[k]) {
+            auto choose_box = [&i, &k]() {
+              if (i < 3) {
+                return k;
+              }
+              if (i < 6) {
+                return 3 + k;
+              }
+              if (i < 9) {
+                return 6 + k;
+              }
+            };
+            for (const auto index : *indices::boxes[choose_box()]) {
+              if (std::find(indices::rows[i]->begin(), indices::rows[i]->end(),
+                            index) == indices::rows[i]->end()) {
+                candidates[index].erase(std::remove(candidates[index].begin(),
+                                                    candidates[index].end(),
+                                                    val),
+                                        candidates[index].end());
+              }
+            }
+          }
+        }
+      }
+    }
+    // columns
+    for (int i = 0; i < 9; ++i) {           // for each column
+      std::vector<std::vector<int>> set(3); // to hold candidates from each box
+      for (int j = 0; j < 9; ++j) {         // for each index in the column
+        if (j < 3) {
+          for (const auto candidate : candidates[indices::columns[i]->at(j)]) {
+            set[0].push_back(candidate); // first box
+          }
+        } else if (j < 6) {
+          for (const auto candidate : candidates[indices::columns[i]->at(j)]) {
+            set[1].push_back(candidate); // second box
+          }
+        } else {
+          for (const auto candidate : candidates[indices::columns[i]->at(j)]) {
+            set[2].push_back(candidate); // third box
+          }
+        }
+      }
+      // find candidates that are in one box but not the others
+      std::map<int, int> frequency;
+      for (const auto &list : set) {
+        for (const auto val : list) {
+          frequency[val]++;
+        }
+      }
+
+      std::vector<std::vector<int>> unique_candidates(3);
+      for (int k = 0; k < 3; ++k) {
+        std::unordered_set<int> unique;
+        for (auto val : set[k]) {
+          if (frequency[val] == std::count(set[k].begin(), set[k].end(), val)) {
+            unique.insert(val);
+          }
+        }
+        unique_candidates[k].assign(unique.begin(), unique.end());
+      }
+
+      // remove duplicates from lists
+      for (auto &list : unique_candidates) {
+        std::sort(list.begin(), list.end());
+        list.erase(std::unique(list.begin(), list.end()), list.end());
+      }
+
+      // if all instances of a candidate in a column are confined to a given
+      // block, then that candidate may be removed from all other cells in that
+      // block
+      for (int k = 0; k < 3; ++k) {
+        if (!unique_candidates[k].empty()) {
+          for (const auto val : unique_candidates[k]) {
+            auto choose_box = [&i, &k]() {
+              if (i < 3) {
+                return k * 3;
+              }
+              if (i < 6) {
+                return k * 3 + 1;
+              }
+              if (i < 9) {
+                return k * 3 + 2;
+              }
+            };
+            for (const auto index : *indices::boxes[choose_box()]) {
+              if (std::find(indices::columns[i]->begin(),
+                            indices::columns[i]->end(),
+                            index) == indices::columns[i]->end()) {
+                candidates[index].erase(std::remove(candidates[index].begin(),
+                                                    candidates[index].end(),
+                                                    val),
+                                        candidates[index].end());
+              }
+            }
+          }
+        }
+      }
+    }
 
     // print candidates
     std::cout << "\nPruned Candidates:\n";

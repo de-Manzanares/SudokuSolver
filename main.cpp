@@ -1,8 +1,6 @@
 #include <array>
 #include <bitset>
 #include <iostream>
-#include <list>
-#include <map>
 #include <vector>
 
 std::vector<int> puzzle = {4, 8, 1, 3, 0, 0, 0, 7, 0, 5, 0, 7, 9, 8, 2, 0, 0,
@@ -10,6 +8,12 @@ std::vector<int> puzzle = {4, 8, 1, 3, 0, 0, 0, 7, 0, 5, 0, 7, 9, 8, 2, 0, 0,
                            8, 5, 0, 9, 0, 0, 2, 5, 0, 0, 4, 0, 7, 0, 4, 0, 3,
                            0, 0, 9, 0, 0, 0, 2, 9, 0, 8, 0, 0, 6, 1, 2, 0, 0,
                            0, 4, 0, 0, 0, 0, 8, 0, 4, 7, 2, 1, 0};
+
+// std::vector<int> puzzle = {0, 0, 0, 0, 0, 2, 8, 0, 6, 3, 0, 1, 0, 0, 0, 2, 0,
+//                            0, 0, 2, 0, 5, 0, 6, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0,
+//                            0, 5, 0, 3, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0,
+//                            3, 0, 0, 0, 0, 9, 0, 6, 0, 5, 0, 0, 0, 4, 0, 0, 0,
+//                            0, 0, 0, 7, 1, 0, 0, 8, 0, 0, 0, 0, 0};
 
 struct indices {
   using row = std::array<int, 9>;
@@ -151,14 +155,15 @@ bool check_validity(int value, int val_index);
 bool check_validity(const std::array<const std::array<int, 9> *, 9> &scope);
 bool is_valid();
 void print_puzzle();
+int iterations{};
 
 int main() {
   print_puzzle();
 
-  // solve single cells until there are no more cells with only a single
-  // candidate
   bool exists_single_candidates = true;
+
   while (exists_single_candidates) {
+    exists_single_candidates = false;
     // list unknown indices
     std::vector<int> unknown_indices{};
     unknown_indices.reserve(puzzle.size());
@@ -167,11 +172,17 @@ int main() {
         unknown_indices.push_back(i);
       }
     }
+    if (unknown_indices.empty()) { // exit if the puzzle is solved
+      break;
+    }
+
+    std::cout << "Unknown cells: ";
     for (const auto num : unknown_indices) {
       std::cout << num << ' ';
     }
     std::cout << '\n';
 
+    // create list of candidates
     std::vector<std::vector<int>> candidates(81);
     for (const auto index : unknown_indices) {
       for (int i = 1; i < 10; ++i) {
@@ -193,30 +204,136 @@ int main() {
     // print candidates
     std::cout << "\nCandidates:\n";
     for (int i = 0; i < candidates.size(); ++i) {
-      std::cout << "Cell " << i << " : ";
-      for (const int j : candidates[i]) {
-        std::cout << ' ' << j << ' ';
+      if (!candidates[i].empty()) {
+        std::cout << "Cell " << i << " : ";
+        for (const int j : candidates[i]) {
+          std::cout << ' ' << j << ' ';
+        }
+        std::cout << '\n';
       }
-      std::cout << '\n';
     }
     std::cout << '\n';
 
     // for each of the cells that has only one candidate, update the puzzle with
     // that value
+    std::cout << "Applying explicit singles ...\n\n";
     for (int i = 0; i < candidates.size(); ++i) {
       if (candidates[i].size() == 1) {
         puzzle[i] = candidates[i][0];
       }
     }
 
-    // print puzzle
-    print_puzzle();
+    // check for implicit single candidates
+    std::vector<int> singles(puzzle.size());
 
+    // check rows
+    for (int i = 0; i < indices::rows.size(); ++i) {
+      std::vector<int> candidate_occurrences(10);
+      for (const auto index : *indices::rows[i]) {
+        for (const auto candidate : candidates[index]) {
+          candidate_occurrences[candidate]++;
+        }
+      }
+      for (int j = 1; j < 10; ++j) {
+        if (candidate_occurrences[j] == 1) {
+          exists_single_candidates = true;
+          for (const auto index : *indices::rows[i]) {
+            for (const auto candidate : candidates[index]) {
+              if (candidate == j) {
+                singles[index] = j;
+              }
+            }
+          }
+        }
+      }
+      std::cout << "row " << i << " occurrences: ";
+      for (const int j : candidate_occurrences) {
+        std::cout << ' ' << j << ' ';
+      }
+      std::cout << '\n';
+    }
+    std::cout << '\n';
+
+    // check columns
+    for (int i = 0; i < indices::columns.size(); ++i) {
+      std::vector<int> candidate_occurrences(10);
+      for (const auto index : *indices::columns[i]) {
+        for (const auto candidate : candidates[index]) {
+          candidate_occurrences[candidate]++;
+        }
+      }
+      for (int j = 1; j < 10; ++j) {
+        if (candidate_occurrences[j] == 1) {
+          exists_single_candidates = true;
+          for (const auto index : *indices::columns[i]) {
+            for (const auto candidate : candidates[index]) {
+              if (candidate == j) {
+                singles[index] = j;
+              }
+            }
+          }
+        }
+      }
+      std::cout << "column " << i << " occurrences: ";
+      for (const int j : candidate_occurrences) {
+        std::cout << ' ' << j << ' ';
+      }
+      std::cout << '\n';
+    }
+    std::cout << '\n';
+
+    // check subgrids
+    for (int i = 0; i < indices::subgrids.size(); ++i) {
+      std::vector<int> candidate_occurrences(10);
+      for (const auto index : *indices::subgrids[i]) {
+        for (const auto candidate : candidates[index]) {
+          candidate_occurrences[candidate]++;
+        }
+      }
+      for (int j = 1; j < 10; ++j) {
+        if (candidate_occurrences[j] == 1) {
+          exists_single_candidates = true;
+          for (const auto index : *indices::subgrids[i]) {
+            for (const auto candidate : candidates[index]) {
+              if (candidate == j) {
+                singles[index] = j;
+              }
+            }
+          }
+        }
+      }
+      std::cout << "subgrid " << i << " occurrences: ";
+      for (const int j : candidate_occurrences) {
+        std::cout << ' ' << j << ' ';
+      }
+      std::cout << '\n';
+    }
+    std::cout << '\n';
+
+    std::cout << "Explicit or Implicit single candidates:\n";
+    for (int i = 0; i < singles.size(); ++i) {
+      if (singles[i] != 0) {
+        std::cout << "Cell " << i << " : " << singles[i] << '\n';
+      }
+    }
+    std::cout << '\n';
+
+    // for each of the cells that has an implied candidate, update the puzzle
+    // with that value
+    for (int i = 0; i < singles.size(); ++i) {
+      if (singles[i] != 0) {
+        puzzle[i] = singles[i];
+      }
+    }
+
+    print_puzzle();
+    ++iterations;
     // check for errors
     if (!is_valid()) {
       std::cout << "AAAAHHH" << '\n';
     }
   }
+  std::cout << "Applied " << iterations << " iterations of deductive logic.\n";
 }
 
 bool check_validity(const std::array<const std::array<int, 9> *, 9> &scope) {

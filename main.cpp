@@ -266,7 +266,9 @@ bool check_validity(int value, int val_index);
 bool check_validity(const std::array<const std::array<int, 9> *, 9> &scope);
 bool is_valid();
 void print_puzzle();
+void print_puzzle(const std::vector<int> &vec);
 int iterations{};
+std::vector<std::vector<int>> puzzles;
 
 int main() {
   print_puzzle();
@@ -283,6 +285,8 @@ int main() {
   bool exists_single_candidates = true;
 
   while (exists_single_candidates) {
+    puzzles.push_back(puzzle);
+
     exists_single_candidates = false;
     // list unknown indices
     std::vector<int> unknown_indices{};
@@ -619,10 +623,14 @@ int main() {
 
     // for each of the cells that has only one candidate, update the puzzle with
     // that value
-    std::cout << "Applying explicit singles ...\n\n";
+    bool printed_message = false;
     for (int i = 0; i < candidates.size(); ++i) {
       if (candidates[i].size() == 1) {
         puzzle[i] = candidates[i][0];
+        if (!printed_message) {
+          std::cout << "Applying explicit singles ...\n\n";
+          printed_message = true;
+        }
       }
     }
 
@@ -736,7 +744,11 @@ int main() {
       std::cout << "AAAAHHH" << '\n';
     }
   }
-  std::cout << "Applied " << iterations << " iterations of deductive logic.\n";
+  std::cout << "Applied " << iterations
+            << " iterations of deductive logic.\n\n";
+  for (const auto &puzzle : puzzles) {
+    print_puzzle(puzzle);
+  }
 }
 
 bool check_validity(const std::array<const std::array<int, 9> *, 9> &scope) {
@@ -786,6 +798,20 @@ void print_puzzle() {
   for (int i = 0; i < puzzle.size(); ++i) {
     if (puzzle[i] != 0) {
       std::cout << ' ' << puzzle[i] << ' ';
+    } else {
+      std::cout << " . ";
+    }
+    if ((i + 1) % 9 == 0) {
+      std::cout << '\n';
+    }
+  }
+  std::cout << '\n';
+}
+
+void print_puzzle(const std::vector<int> &vec) {
+  for (int i = 0; i < vec.size(); ++i) {
+    if (vec[i] != 0) {
+      std::cout << ' ' << vec[i] << ' ';
     } else {
       std::cout << " . ";
     }

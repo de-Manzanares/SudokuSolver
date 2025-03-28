@@ -2,6 +2,7 @@
 #include <array>
 #include <bitset>
 #include <cassert>
+#include <functional>
 #include <iostream>
 #include <list>
 #include <map>
@@ -10,10 +11,10 @@
 #include <unordered_set>
 #include <vector>
 
-#define EASY_
+#define EASY_Y
 #define MEDM_
 #define HARD_
-#define MAST_Y
+#define MAST_
 
 #ifdef EASY_Y
 std::vector<int> puzzle = {4, 8, 1, 3, 0, 0, 0, 7, 0, 5, 0, 7, 9, 8, 2, 0, 0,
@@ -40,12 +41,11 @@ std::vector<int> puzzle = {2, 9, 1, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 3, 9, 0,
 #endif
 
 #ifdef MAST_Y
-std::vector<int> puzzle = {
-    3, 0, 0, 0, 0, 0, 7, 6, 0, 0, 0, 2, 0, 0, 3, 0, 0, 0, 5, 0, 8,
-    0, 7, 2, 0, 1, 0, 0, 4, 0, 0, 3, 0, 1, 2, 0, 0, 0, 1, 0, 6, 0,
-    0, 0, 5, 0, 2, 0, 0, 0, 0, 0, 3, 6, 1, 0, 0, 0, 0, 0, 0, 7, 0,
-    0, 0, 0, 0, 2, 0, 0, 4, 0, 0, 5, 0, 0, 0, 4, 0, 0, 3,
-};
+std::vector<int> puzzle = {3, 0, 0, 0, 0, 0, 7, 6, 0, 0, 0, 2, 0, 0, 3, 0, 0,
+                           0, 5, 0, 8, 0, 7, 2, 0, 1, 0, 0, 4, 0, 0, 3, 0, 1,
+                           2, 0, 0, 0, 1, 0, 6, 0, 0, 0, 5, 0, 2, 0, 0, 0, 0,
+                           0, 3, 6, 1, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 2,
+                           0, 0, 4, 0, 0, 5, 0, 0, 0, 4, 0, 0, 3};
 #endif
 
 static constexpr std::array<int, 3> intersection(const std::array<int, 9> &a,
@@ -198,6 +198,8 @@ struct indices {
                       {&box8column6, &box8column7, &box8column8}}}}};
 };
 
+enum class house { row, column, box };
+
 bool check_validity(int value, int val_index);
 bool check_validity(const std::array<std::array<int, 9>, 9> &scope);
 bool is_valid();
@@ -206,406 +208,228 @@ void print_puzzle(const std::vector<int> &vec);
 int iterations{};
 std::vector<std::vector<int>> puzzles;
 
-int main() {
-  print_puzzle();
+int PUZZLE_SIZE = 81;
+int UNKNOWN = 0;
 
+void check_puzzle() {
   try {
-    if (puzzle.size() != 81 || !is_valid()) {
+    if (puzzle.size() != PUZZLE_SIZE || !is_valid()) {
       throw std::runtime_error("puzzle is malformed");
     }
   } catch (const std::exception &e) {
     std::cerr << e.what() << '\n';
     std::exit(EXIT_FAILURE);
   }
+}
 
-  bool exists_single_candidates = true;
+std::vector<int> list_unknown_indices() {
+  std::vector<int> unk;
+  unk.reserve(PUZZLE_SIZE);
+  for (int i = 0; i < PUZZLE_SIZE; ++i) {
+    if (puzzle[i] == UNKNOWN) {
+      unk.push_back(i);
+    }
+  }
+  return unk;
+}
 
-  while (exists_single_candidates) {
-    puzzles.push_back(puzzle);
+void print(const std::string &str, const std::vector<int> &vec) {
+  std::cout << str;
+  for (const auto v : vec) {
+    std::cout << v << " ";
+  }
+  std::cout << "\n\n";
+}
 
-    exists_single_candidates = false;
-    // list unknown indices
-    std::vector<int> unknown_indices{};
-    unknown_indices.reserve(puzzle.size());
-    for (int i = 0; i < puzzle.size(); ++i) {
-      if (puzzle[i] == 0) {
-        unknown_indices.push_back(i);
+std::vector<std::vector<int>> list_candidates(const std::vector<int> &unk) {
+  std::vector<std::vector<int>> candidates(81);
+  for (const auto index : unk) {
+    for (int i = 1; i < 10; ++i) {
+      if (check_validity(i, index)) {
+        candidates[index].push_back(i);
       }
     }
-    if (unknown_indices.empty()) { // exit if the puzzle is solved
-      break;
+  }
+  return candidates;
+}
+
+void print_candidates(const std::string &str,
+                      const std::vector<std::vector<int>> &vec) {
+  std::cout << str;
+  for (int i = 0; i < vec.size(); ++i) {
+    if (!vec[i].empty()) {
+      std::cout << "Cell " << i << " : ";
+      for (const int j : vec[i]) {
+        std::cout << ' ' << j << ' ';
+      }
+      std::cout << '\n';
     }
+  }
+  std::cout << '\n';
+}
 
-    std::cout << "Unknown cells: ";
-    for (const auto num : unknown_indices) {
-      std::cout << num << ' ';
-    }
-    std::cout << '\n';
+// hidden pair/triple/quad
+// for each row, column, and box
+// if there exists an identical pair of candidates in two cells, but nowhere
+// else in the house, then all other candidates from those cells can be
+// removed.
 
-    // create list of candidates
-    std::vector<std::vector<int>> candidates(81);
-    for (const auto index : unknown_indices) {
-      for (int i = 1; i < 10; ++i) {
-        if (check_validity(i, index)) {
-          candidates[index].push_back(i);
-        }
-      }
-    }
-
-    // print candidates
-    std::cout << "\nCandidates:\n";
-    for (int i = 0; i < candidates.size(); ++i) {
-      if (!candidates[i].empty()) {
-        std::cout << "Cell " << i << " : ";
-        for (const int j : candidates[i]) {
-          std::cout << ' ' << j << ' ';
-        }
-        std::cout << '\n';
-      }
-    }
-    std::cout << '\n';
-
-    // prune list of candidates
-
-    // hidden pair/triple/quad
-    // for each row, column, and box
-    // if there exists an identical pair of candidates in two cells, but nowhere
-    // else in the house, then all other candidates from those cells can be
-    // removed.
-
-    // rows
-    for (int i = 0; i < 9; ++i) { // for each row
-      std::unordered_map<int, std::vector<int>> candidates_to_cells;
-      // for each candidate, find in which cells of the house it resides
-      for (int val = 1; val < 10; ++val) {
-        for (const auto index : indices::rows[i]) {
-          for (const auto candidate : candidates[index]) {
-            if (val == candidate) {
-              candidates_to_cells[val].push_back(index);
-            }
-          }
-        }
-      }
-      // now we can search for the pairs/triples/quads in the row
-      std::unordered_map<int, std::vector<int>> pairs;
-      std::unordered_map<int, std::vector<int>> triples;
-      std::unordered_map<int, std::vector<int>> quads;
-      for (const auto &[val, cells] : candidates_to_cells) {
-        if (cells.size() == 2) {
-          pairs[val] = cells;
-        }
-        if (1 < cells.size() && cells.size() < 4) {
-          triples[val] = cells;
-        }
-        if (1 < cells.size() && cells.size() < 5) {
-          quads[val] = cells;
-        }
-      }
-      if (pairs.size() == 2) {
-        // compare every pair to every other pair
-        if (pairs.begin()->second == std::next(pairs.begin())->second) {
-          for (int j = 0; j < 2; ++j) {
-            candidates[pairs.begin()->second[j]].erase(
-                std::remove_if(candidates[pairs.begin()->second[j]].begin(),
-                               candidates[pairs.begin()->second[j]].end(),
-                               [&pairs](auto x) {
-                                 return !(x == pairs.begin()->first ||
-                                          x == std::next(pairs.begin())->first);
-                               }),
-                candidates[pairs.begin()->second[j]].end());
-          }
-        }
-      }
-      if (triples.size() == 3) {
-        // calculate the union of the cells
-        std::set<int> cells;
-        for (auto it = triples.begin(); it != triples.end(); ++it) {
-          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
-            cells.insert(*iit);
-          }
-        }
-        if (cells.size() == 3) {
-          std::set<int> values;
-          for (auto &[value, idxs] : triples) {
-            values.insert(value);
-          }
-          for (const auto cell : cells) {
-            candidates[cell].erase(
-                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
-                               [&values](auto x) {
-                                 return std::find(values.begin(), values.end(),
-                                                  x) == values.end();
-                               }),
-                candidates[cell].end());
-          }
-        }
-      }
-      if (quads.size() == 4) {
-        // calculate the union of the cells
-        std::set<int> cells;
-        for (auto it = quads.begin(); it != quads.end(); ++it) {
-          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
-            cells.insert(*iit);
-          }
-        }
-        if (cells.size() == 4) {
-          std::set<int> values;
-          for (auto &[value, idxs] : quads) {
-            values.insert(value);
-          }
-          for (const auto cell : cells) {
-            candidates[cell].erase(
-                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
-                               [&values](auto x) {
-                                 return std::find(values.begin(), values.end(),
-                                                  x) == values.end();
-                               }),
-                candidates[cell].end());
+void prune_hidden_pair_triple_quad(
+    std::vector<std::vector<int>> &candidates,
+    const std::array<std::array<int, 9>, 9> &houses) {
+  for (int i = 0; i < 9; ++i) { // for each row
+    std::unordered_map<int, std::vector<int>> candidates_to_cells;
+    // for each candidate, find in which cells of the house it resides
+    for (int val = 1; val < 10; ++val) {
+      for (const auto index : houses[i]) {
+        for (const auto candidate : candidates[index]) {
+          if (val == candidate) {
+            candidates_to_cells[val].push_back(index);
           }
         }
       }
     }
-    // columns
-    for (int i = 0; i < 9; ++i) { // for each column
-      std::unordered_map<int, std::vector<int>> candidates_to_cells;
-      // for each candidate, find in which cells of the house it resides
-      for (int val = 1; val < 10; ++val) {
-        for (const auto index : indices::columns[i]) {
-          for (const auto candidate : candidates[index]) {
-            if (val == candidate) {
-              candidates_to_cells[val].push_back(index);
-            }
-          }
-        }
+    // now we can search for the pairs/triples/quads in the row
+    std::unordered_map<int, std::vector<int>> pairs;
+    std::unordered_map<int, std::vector<int>> triples;
+    std::unordered_map<int, std::vector<int>> quads;
+    for (const auto &[val, cells] : candidates_to_cells) {
+      if (cells.size() == 2) {
+        pairs[val] = cells;
       }
-      // now we can search for the pairs/triples/quads in the row
-      std::unordered_map<int, std::vector<int>> pairs;
-      std::unordered_map<int, std::vector<int>> triples;
-      std::unordered_map<int, std::vector<int>> quads;
-      for (const auto &[val, cells] : candidates_to_cells) {
-        if (cells.size() == 2) {
-          pairs[val] = cells;
-        }
-        if (1 < cells.size() && cells.size() < 4) {
-          triples[val] = cells;
-        }
-        if (1 < cells.size() && cells.size() < 5) {
-          quads[val] = cells;
-        }
+      if (1 < cells.size() && cells.size() < 4) {
+        triples[val] = cells;
       }
-      if (pairs.size() == 2) {
-        // compare every pair to every other pair
-        if (pairs.begin()->second == std::next(pairs.begin())->second) {
-          for (int j = 0; j < 2; ++j) {
-            candidates[pairs.begin()->second[j]].erase(
-                std::remove_if(candidates[pairs.begin()->second[j]].begin(),
-                               candidates[pairs.begin()->second[j]].end(),
-                               [&pairs](auto x) {
-                                 return !(x == pairs.begin()->first ||
-                                          x == std::next(pairs.begin())->first);
-                               }),
-                candidates[pairs.begin()->second[j]].end());
-          }
-        }
+      if (1 < cells.size() && cells.size() < 5) {
+        quads[val] = cells;
       }
-      if (triples.size() == 3) {
-        // calculate the union of the cells
-        std::set<int> cells;
-        for (auto it = triples.begin(); it != triples.end(); ++it) {
-          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
-            cells.insert(*iit);
-          }
-        }
-        if (cells.size() == 3) {
-          std::set<int> values;
-          for (auto &[value, idxs] : triples) {
-            values.insert(value);
-          }
-          for (const auto cell : cells) {
-            candidates[cell].erase(
-                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
-                               [&values](auto x) {
-                                 return std::find(values.begin(), values.end(),
-                                                  x) == values.end();
-                               }),
-                candidates[cell].end());
-          }
-        }
-      }
-      if (quads.size() == 4) {
-        // calculate the union of the cells
-        std::set<int> cells;
-        for (auto it = quads.begin(); it != quads.end(); ++it) {
-          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
-            cells.insert(*iit);
-          }
-        }
-        if (cells.size() == 4) {
-          std::set<int> values;
-          for (auto &[value, idxs] : quads) {
-            values.insert(value);
-          }
-          for (const auto cell : cells) {
-            candidates[cell].erase(
-                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
-                               [&values](auto x) {
-                                 return std::find(values.begin(), values.end(),
-                                                  x) == values.end();
-                               }),
-                candidates[cell].end());
-          }
+    }
+    if (pairs.size() == 2) {
+      // compare every pair to every other pair
+      if (pairs.begin()->second == std::next(pairs.begin())->second) {
+        for (int j = 0; j < 2; ++j) {
+          candidates[pairs.begin()->second[j]].erase(
+              std::remove_if(candidates[pairs.begin()->second[j]].begin(),
+                             candidates[pairs.begin()->second[j]].end(),
+                             [&pairs](auto x) {
+                               return !(x == pairs.begin()->first ||
+                                        x == std::next(pairs.begin())->first);
+                             }),
+              candidates[pairs.begin()->second[j]].end());
         }
       }
     }
-    // boxes
-    for (int i = 0; i < 9; ++i) { // for each box
-      std::unordered_map<int, std::vector<int>> candidates_to_cells;
-      // for each candidate, find in which cells of the house it resides
-      for (int val = 1; val < 10; ++val) {
-        for (const auto index : indices::boxes[i]) {
-          for (const auto candidate : candidates[index]) {
-            if (val == candidate) {
-              candidates_to_cells[val].push_back(index);
-            }
-          }
+    if (triples.size() == 3) {
+      // calculate the union of the cells
+      std::set<int> cells;
+      for (auto it = triples.begin(); it != triples.end(); ++it) {
+        for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
+          cells.insert(*iit);
         }
       }
-      // now we can search for the pairs/triples/quads in the row
-      std::unordered_map<int, std::vector<int>> pairs;
-      std::unordered_map<int, std::vector<int>> triples;
-      std::unordered_map<int, std::vector<int>> quads;
-      for (const auto &[val, cells] : candidates_to_cells) {
-        if (cells.size() == 2) {
-          pairs[val] = cells;
+      if (cells.size() == 3) {
+        std::set<int> values;
+        for (auto &[value, idxs] : triples) {
+          values.insert(value);
         }
-        if (1 < cells.size() && cells.size() < 4) {
-          triples[val] = cells;
-        }
-        if (1 < cells.size() && cells.size() < 5) {
-          quads[val] = cells;
-        }
-      }
-      if (pairs.size() == 2) {
-        // compare every pair to every other pair
-        if (pairs.begin()->second == std::next(pairs.begin())->second) {
-          for (int j = 0; j < 2; ++j) {
-            candidates[pairs.begin()->second[j]].erase(
-                std::remove_if(candidates[pairs.begin()->second[j]].begin(),
-                               candidates[pairs.begin()->second[j]].end(),
-                               [&pairs](auto x) {
-                                 return !(x == pairs.begin()->first ||
-                                          x == std::next(pairs.begin())->first);
-                               }),
-                candidates[pairs.begin()->second[j]].end());
-          }
-        }
-      }
-      if (triples.size() == 3) {
-        // calculate the union of the cells
-        std::set<int> cells;
-        for (auto it = triples.begin(); it != triples.end(); ++it) {
-          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
-            cells.insert(*iit);
-          }
-        }
-        if (cells.size() == 3) {
-          std::set<int> values;
-          for (auto &[value, idxs] : triples) {
-            values.insert(value);
-          }
-          for (const auto cell : cells) {
-            candidates[cell].erase(
-                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
-                               [&values](auto x) {
-                                 return std::find(values.begin(), values.end(),
-                                                  x) == values.end();
-                               }),
-                candidates[cell].end());
-          }
-        }
-      }
-      if (quads.size() == 4) {
-        // calculate the union of the cells
-        std::set<int> cells;
-        for (auto it = quads.begin(); it != quads.end(); ++it) {
-          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
-            cells.insert(*iit);
-          }
-        }
-        if (cells.size() == 4) {
-          std::set<int> values;
-          for (auto &[value, idxs] : quads) {
-            values.insert(value);
-          }
-          for (const auto cell : cells) {
-            candidates[cell].erase(
-                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
-                               [&values](auto x) {
-                                 return std::find(values.begin(), values.end(),
-                                                  x) == values.end();
-                               }),
-                candidates[cell].end());
-          }
+        for (const auto cell : cells) {
+          candidates[cell].erase(
+              std::remove_if(candidates[cell].begin(), candidates[cell].end(),
+                             [&values](auto x) {
+                               return std::find(values.begin(), values.end(),
+                                                x) == values.end();
+                             }),
+              candidates[cell].end());
         }
       }
     }
-
-    // claiming locked candidates
-    // https://hodoku.sourceforge.net/en/tech_intersections.php
-    // If in a row (or column) all candidates of a certain digit are confined to
-    // one block, that candidate that be eliminated from all other cells in that
-    // block.
-    // identify if a candidate only appears in one box or a row or column
-
-    // rows
-    for (int i = 0; i < 9; ++i) {           // for each row
-      std::vector<std::vector<int>> set(3); // to hold candidates from each box
-      for (int j = 0; j < 9; ++j) {         // for each index in the row
-        if (j < 3) {
-          for (const auto candidate : candidates[indices::rows[i].at(j)]) {
-            set[0].push_back(candidate); // first box
-          }
-        } else if (j < 6) {
-          for (const auto candidate : candidates[indices::rows[i].at(j)]) {
-            set[1].push_back(candidate); // second box
-          }
-        } else {
-          for (const auto candidate : candidates[indices::rows[i].at(j)]) {
-            set[2].push_back(candidate); // third box
-          }
+    if (quads.size() == 4) {
+      // calculate the union of the cells
+      std::set<int> cells;
+      for (auto it = quads.begin(); it != quads.end(); ++it) {
+        for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
+          cells.insert(*iit);
         }
       }
-      // find candidates that are in one box but not the others
-      std::map<int, int> frequency;
-      for (const auto &list : set) {
-        for (const auto val : list) {
-          frequency[val]++;
+      if (cells.size() == 4) {
+        std::set<int> values;
+        for (auto &[value, idxs] : quads) {
+          values.insert(value);
+        }
+        for (const auto cell : cells) {
+          candidates[cell].erase(
+              std::remove_if(candidates[cell].begin(), candidates[cell].end(),
+                             [&values](auto x) {
+                               return std::find(values.begin(), values.end(),
+                                                x) == values.end();
+                             }),
+              candidates[cell].end());
         }
       }
+    }
+  }
+}
 
-      std::vector<std::vector<int>> unique_candidates(3);
-      for (int k = 0; k < 3; ++k) {
-        std::unordered_set<int> unique;
-        for (auto val : set[k]) {
-          if (frequency[val] == std::count(set[k].begin(), set[k].end(), val)) {
-            unique.insert(val);
-          }
+// claiming locked candidates
+// https://hodoku.sourceforge.net/en/tech_intersections.php
+// If in a row (or column) all candidates of a certain digit are confined to
+// one block, that candidate that be eliminated from all other cells in that
+// block.
+// identify if a candidate only appears in one box or a row or column
+
+void prune_claiming_locked_candidates(std::vector<std::vector<int>> &candidates,
+                                      const house tag) {
+  const auto &houses = tag == house::row ? indices::rows : indices::columns;
+  for (int i = 0; i < 9; ++i) {
+    std::vector<std::vector<int>> set(3); // to hold candidates from each box
+    for (int j = 0; j < 9; ++j) {
+      if (j < 3) {
+        for (const auto candidate : candidates[houses[i][j]]) {
+          set[0].push_back(candidate); // first box
         }
-        unique_candidates[k].assign(unique.begin(), unique.end());
+      } else if (j < 6) {
+        for (const auto candidate : candidates[houses[i][j]]) {
+          set[1].push_back(candidate); // second box
+        }
+      } else {
+        for (const auto candidate : candidates[houses[i][j]]) {
+          set[2].push_back(candidate); // third box
+        }
       }
-
-      // remove duplicates from lists
-      for (auto &list : unique_candidates) {
-        std::sort(list.begin(), list.end());
-        list.erase(std::unique(list.begin(), list.end()), list.end());
+    }
+    // find candidates that are in one box but not the others
+    std::map<int, int> frequency;
+    for (const auto &list : set) {
+      for (const auto val : list) {
+        frequency[val]++;
       }
+    }
 
-      // if all instances of a candidate in a row are confined to a given block,
-      // then that candidate may be removed from all other cells in that block
-      for (int k = 0; k < 3; ++k) {
-        if (!unique_candidates[k].empty()) {
-          for (const auto val : unique_candidates[k]) {
-            auto choose_box = [&i, &k]() {
+    std::vector<std::vector<int>> unique_candidates(3);
+    for (int k = 0; k < 3; ++k) {
+      std::unordered_set<int> unique;
+      for (auto val : set[k]) {
+        if (frequency[val] == std::count(set[k].begin(), set[k].end(), val)) {
+          unique.insert(val);
+        }
+      }
+      unique_candidates[k].assign(unique.begin(), unique.end());
+    }
+
+    // remove duplicates from lists
+    for (auto &list : unique_candidates) {
+      std::sort(list.begin(), list.end());
+      list.erase(std::unique(list.begin(), list.end()), list.end());
+    }
+
+    // if all instances of a candidate in a row are confined to a given block,
+    // then that candidate may be removed from all other cells in that block
+    for (int k = 0; k < 3; ++k) {
+      if (!unique_candidates[k].empty()) {
+        for (const auto val : unique_candidates[k]) {
+          std::function<int()> choose_box;
+          if (tag == house::row) {
+            choose_box = [&i, &k]() {
               if (i < 3) {
                 return k;
               }
@@ -616,42 +440,59 @@ int main() {
                 return 6 + k;
               }
             };
-            for (const auto index : indices::boxes[choose_box()]) {
-              if (std::find(indices::rows[i].begin(), indices::rows[i].end(),
-                            index) == indices::rows[i].end()) {
-                candidates[index].erase(std::remove(candidates[index].begin(),
-                                                    candidates[index].end(),
-                                                    val),
-                                        candidates[index].end());
+          }
+          if (tag == house::column) {
+            choose_box = [&i, &k]() {
+              if (i < 3) {
+                return k * 3;
               }
+              if (i < 6) {
+                return k * 3 + 1;
+              }
+              if (i < 9) {
+                return k * 3 + 2;
+              }
+            };
+          }
+          for (const auto index : indices::boxes[choose_box()]) {
+            if (std::find(houses[i].begin(), houses[i].end(), index) ==
+                houses[i].end()) {
+              candidates[index].erase(std::remove(candidates[index].begin(),
+                                                  candidates[index].end(), val),
+                                      candidates[index].end());
             }
           }
         }
       }
     }
-    // columns
-    for (int i = 0; i < 9; ++i) {           // for each column
-      std::vector<std::vector<int>> set(3); // to hold candidates from each box
-      for (int j = 0; j < 9; ++j) {         // for each index in the column
-        if (j < 3) {
-          for (const auto candidate : candidates[indices::columns[i].at(j)]) {
-            set[0].push_back(candidate); // first box
-          }
-        } else if (j < 6) {
-          for (const auto candidate : candidates[indices::columns[i].at(j)]) {
-            set[1].push_back(candidate); // second box
-          }
-        } else {
-          for (const auto candidate : candidates[indices::columns[i].at(j)]) {
-            set[2].push_back(candidate); // third box
+  }
+}
+
+// pointing locked candidates
+// https://hodoku.sourceforge.net/en/tech_intersections.php
+// If in a block all candidates of a certain digit are confined to a row or
+// column, that digit cannot appear outside of that block in that row or
+// column.
+// identify if a candidate only appears in one row or column of a box
+
+void prune_pointing_locked_candidates(
+    std::vector<std::vector<int>> &candidates) {
+  for (int i = 0; i < 9; ++i) {   // intersections
+    for (int j = 0; j < 2; ++j) { // 0: rows, 1: columns
+      std::vector<std::vector<int>> set(3);
+      for (int k = 0; k < 3; ++k) {   // the indices of the intersection
+        for (int l = 0; l < 3; ++l) { // index
+          for (const auto candidate :
+               candidates[indices::subranges[i][j][k]->at(l)]) {
+            set[k].push_back(candidate);
           }
         }
       }
-      // find candidates that are in one box but not the others
+      // find values that are in one subset but not the others
       std::map<int, int> frequency;
       for (const auto &list : set) {
-        for (const auto val : list) {
-          frequency[val]++;
+        for (const auto value : list) {
+          frequency[value]++;
         }
       }
 
@@ -666,143 +507,66 @@ int main() {
         unique_candidates[k].assign(unique.begin(), unique.end());
       }
 
-      // remove duplicates from lists
+      // remove duplicate values
       for (auto &list : unique_candidates) {
         std::sort(list.begin(), list.end());
         list.erase(std::unique(list.begin(), list.end()), list.end());
       }
-
-      // if all instances of a candidate in a column are confined to a given
-      // block, then that candidate may be removed from all other cells in that
-      // block
+      // i : box
+      // j : 0 -> rows, 1 -> columns
+      // k : first, second, third row/column in the given box
+      // l : first, second, third index of the given row/column
       for (int k = 0; k < 3; ++k) {
         if (!unique_candidates[k].empty()) {
           for (const auto val : unique_candidates[k]) {
-            auto choose_box = [&i, &k]() {
-              if (i < 3) {
-                return k * 3;
-              }
-              if (i < 6) {
-                return k * 3 + 1;
-              }
-              if (i < 9) {
-                return k * 3 + 2;
-              }
-            };
-            for (const auto index : indices::boxes[choose_box()]) {
-              if (std::find(indices::columns[i].begin(),
-                            indices::columns[i].end(),
-                            index) == indices::columns[i].end()) {
-                candidates[index].erase(std::remove(candidates[index].begin(),
-                                                    candidates[index].end(),
-                                                    val),
-                                        candidates[index].end());
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // pointing locked candidates
-    // https://hodoku.sourceforge.net/en/tech_intersections.php
-    // If in a block all candidates of a certain digit are confined to a row or
-    // column, that digit cannot appear outside of that block in that row or
-    // column.
-    // identify if a candidate only appears in one row or column of a box
-
-    for (int i = 0; i < 9; ++i) {   // intersections
-      for (int j = 0; j < 2; ++j) { // 0: rows, 1: columns
-        std::vector<std::vector<int>> set(3);
-        for (int k = 0; k < 3; ++k) {   // the indices of the intersection
-          for (int l = 0; l < 3; ++l) { // index
-            for (const auto candidate :
-                 candidates[indices::subranges[i][j][k]->at(l)]) {
-              set[k].push_back(candidate);
-            }
-          }
-        }
-        // find values that are in one subset but not the others
-        std::map<int, int> frequency;
-        for (const auto &list : set) {
-          for (const auto value : list) {
-            frequency[value]++;
-          }
-        }
-
-        std::vector<std::vector<int>> unique_candidates(3);
-        for (int k = 0; k < 3; ++k) {
-          std::unordered_set<int> unique;
-          for (auto val : set[k]) {
-            if (frequency[val] ==
-                std::count(set[k].begin(), set[k].end(), val)) {
-              unique.insert(val);
-            }
-          }
-          unique_candidates[k].assign(unique.begin(), unique.end());
-        }
-
-        // remove duplicate values
-        for (auto &list : unique_candidates) {
-          std::sort(list.begin(), list.end());
-          list.erase(std::unique(list.begin(), list.end()), list.end());
-        }
-        // i : box
-        // j : 0 -> rows, 1 -> columns
-        // k : first, second, third row/column in the given box
-        // l : first, second, third index of the given row/column
-        for (int k = 0; k < 3; ++k) {
-          if (!unique_candidates[k].empty()) {
-            for (const auto val : unique_candidates[k]) {
-              if (j == 0) { // rows
-                auto choose_row = [&i, &k]() {
-                  if (i < 3) {
-                    return k;
-                  }
-                  if (3 <= i && i < 6) {
-                    return 3 + k;
-                  }
-                  if (i >= 6) {
-                    return 6 + k;
-                  }
-                };
-                for (const auto index : indices::rows[choose_row()]) {
-                  if (std::find(indices::subranges[i][j][k]->begin(),
-                                indices::subranges[i][j][k]->end(),
-                                index) == indices::subranges[i][j][k]->end()) {
-                    for (auto it = candidates[index].begin();
-                         it != candidates[index].end();) {
-                      if (*it == val) {
-                        it = candidates[index].erase(it);
-                      } else {
-                        ++it;
-                      }
+            if (j == 0) { // rows
+              auto choose_row = [&i, &k]() {
+                if (i < 3) {
+                  return k;
+                }
+                if (3 <= i && i < 6) {
+                  return 3 + k;
+                }
+                if (i >= 6) {
+                  return 6 + k;
+                }
+              };
+              for (const auto index : indices::rows[choose_row()]) {
+                if (std::find(indices::subranges[i][j][k]->begin(),
+                              indices::subranges[i][j][k]->end(),
+                              index) == indices::subranges[i][j][k]->end()) {
+                  for (auto it = candidates[index].begin();
+                       it != candidates[index].end();) {
+                    if (*it == val) {
+                      it = candidates[index].erase(it);
+                    } else {
+                      ++it;
                     }
                   }
                 }
-              } else if (j == 1) { // columns
-                auto choose_column = [&i, &k]() {
-                  if (i == 0 || i == 3 || i == 6) {
-                    return k;
-                  }
-                  if (i == 1 || i == 4 || i == 7) {
-                    return 3 + k;
-                  }
-                  if (i == 2 || i == 5 || i == 8) {
-                    return 6 + k;
-                  }
-                };
-                for (const auto index : indices::columns[choose_column()]) {
-                  if (std::find(indices::subranges[i][j][k]->begin(),
-                                indices::subranges[i][j][k]->end(),
-                                index) == indices::subranges[i][j][k]->end()) {
-                    for (auto it = candidates[index].begin();
-                         it != candidates[index].end();) {
-                      if (*it == val) {
-                        it = candidates[index].erase(it);
-                      } else {
-                        ++it;
-                      }
+              }
+            } else if (j == 1) { // columns
+              auto choose_column = [&i, &k]() {
+                if (i == 0 || i == 3 || i == 6) {
+                  return k;
+                }
+                if (i == 1 || i == 4 || i == 7) {
+                  return 3 + k;
+                }
+                if (i == 2 || i == 5 || i == 8) {
+                  return 6 + k;
+                }
+              };
+              for (const auto index : indices::columns[choose_column()]) {
+                if (std::find(indices::subranges[i][j][k]->begin(),
+                              indices::subranges[i][j][k]->end(),
+                              index) == indices::subranges[i][j][k]->end()) {
+                  for (auto it = candidates[index].begin();
+                       it != candidates[index].end();) {
+                    if (*it == val) {
+                      it = candidates[index].erase(it);
+                    } else {
+                      ++it;
                     }
                   }
                 }
@@ -812,142 +576,131 @@ int main() {
         }
       }
     }
+  }
+}
 
-    // print candidates
-    std::cout << "\nPruned Candidates:\n";
-    for (int i = 0; i < candidates.size(); ++i) {
-      if (!candidates[i].empty()) {
-        std::cout << "Cell " << i << " : ";
-        for (const int j : candidates[i]) {
-          std::cout << ' ' << j << ' ';
-        }
-        std::cout << '\n';
+void solve_explicit_singles(const std::vector<std::vector<int>> &candidates) {
+  bool printed_message = false;
+  for (int i = 0; i < candidates.size(); ++i) {
+    if (candidates[i].size() == 1) {
+      puzzle[i] = candidates[i][0];
+      if (!printed_message) {
+        std::cout << "Applying explicit singles ...\n\n";
+        printed_message = true;
       }
+    }
+  }
+}
+
+void find_implicit_singles(std::vector<int> &singles,
+                           const std::vector<std::vector<int>> &candidates,
+                           const house tag) {
+  const auto &houses = tag == house::row      ? indices::rows
+                       : tag == house::column ? indices::columns
+                                              : indices::boxes;
+  const auto label = tag == house::row      ? "row"
+                     : tag == house::column ? "col"
+                                            : "box";
+  for (int i = 0; i < houses.size(); ++i) {
+    std::vector<int> candidate_occurrences(10);
+    for (const auto index : houses[i]) {
+      for (const auto candidate : candidates[index]) {
+        candidate_occurrences[candidate]++;
+      }
+    }
+    for (int j = 1; j < 10; ++j) {
+      if (candidate_occurrences[j] == 1) {
+        for (const auto index : houses[i]) {
+          for (const auto candidate : candidates[index]) {
+            if (candidate == j) {
+              singles[index] = j;
+            }
+          }
+        }
+      }
+    }
+    std::cout << label << i << " occurrences: ";
+    for (const int j : candidate_occurrences) {
+      std::cout << ' ' << j << ' ';
     }
     std::cout << '\n';
+  }
+  std::cout << '\n';
+}
 
-    // for each of the cells that has only one candidate, update the puzzle with
-    // that value
-    bool printed_message = false;
-    for (int i = 0; i < candidates.size(); ++i) {
-      if (candidates[i].size() == 1) {
-        puzzle[i] = candidates[i][0];
-        if (!printed_message) {
-          std::cout << "Applying explicit singles ...\n\n";
-          printed_message = true;
-        }
+void print_singles(const std::string &str, const std::vector<int> &singles) {
+  bool printed_message = false;
+  for (int i = 0; i < PUZZLE_SIZE; ++i) {
+    if (singles[i] != 0) {
+      if (!printed_message) {
+        std::cout << str;
+        printed_message = true;
       }
+      std::cout << "Cell " << i << " : " << singles[i] << '\n';
     }
+  }
+  std::cout << '\n';
+}
+
+bool solve_implicit_singles(const std::vector<int> &singles) {
+  bool exists_single_candidates = false;
+  for (int i = 0; i < PUZZLE_SIZE; ++i) {
+    if (singles[i] != 0) {
+      puzzle[i] = singles[i];
+      exists_single_candidates = true;
+    }
+  }
+  return exists_single_candidates;
+}
+
+int main() {
+  print_puzzle();
+  check_puzzle();
+
+  // naked and hidden singles are thus far the backbone of our solving method
+  bool exists_single_candidates = true;
+
+  while (exists_single_candidates) {
+    exists_single_candidates = false;
+
+    puzzles.push_back(puzzle); // to show the iterative progress at the end
+
+    auto unknown_indices = list_unknown_indices();
+    if (unknown_indices.empty()) {
+      break; // exit if the puzzle is solved
+    }
+    auto candidates = list_candidates(unknown_indices);
+
+    print("Unknown cells:\n", unknown_indices);
+    print_candidates("Candidates:\n", candidates);
+
+    prune_hidden_pair_triple_quad(candidates, indices::rows);
+    prune_hidden_pair_triple_quad(candidates, indices::columns);
+    prune_hidden_pair_triple_quad(candidates, indices::boxes);
+
+    prune_claiming_locked_candidates(candidates, house::row);
+    prune_claiming_locked_candidates(candidates, house::column);
+
+    prune_pointing_locked_candidates(candidates);
+
+    print_candidates("Pruned Candidates:\n", candidates);
+
+    solve_explicit_singles(candidates);
 
     // check for implicit single candidates
-    std::vector<int> singles(puzzle.size());
+    std::vector<int> singles(PUZZLE_SIZE);
+    find_implicit_singles(singles, candidates, house::row);
+    find_implicit_singles(singles, candidates, house::column);
+    find_implicit_singles(singles, candidates, house::box);
 
-    // check rows
-    for (int i = 0; i < indices::rows.size(); ++i) {
-      std::vector<int> candidate_occurrences(10);
-      for (const auto index : indices::rows[i]) {
-        for (const auto candidate : candidates[index]) {
-          candidate_occurrences[candidate]++;
-        }
-      }
-      for (int j = 1; j < 10; ++j) {
-        if (candidate_occurrences[j] == 1) {
-          exists_single_candidates = true;
-          for (const auto index : indices::rows[i]) {
-            for (const auto candidate : candidates[index]) {
-              if (candidate == j) {
-                singles[index] = j;
-              }
-            }
-          }
-        }
-      }
-      std::cout << "row " << i << " occurrences: ";
-      for (const int j : candidate_occurrences) {
-        std::cout << ' ' << j << ' ';
-      }
-      std::cout << '\n';
-    }
-    std::cout << '\n';
+    print_singles("Explicit or Implicit single candidates:\n", singles);
 
-    // check columns
-    for (int i = 0; i < indices::columns.size(); ++i) {
-      std::vector<int> candidate_occurrences(10);
-      for (const auto index : indices::columns[i]) {
-        for (const auto candidate : candidates[index]) {
-          candidate_occurrences[candidate]++;
-        }
-      }
-      for (int j = 1; j < 10; ++j) {
-        if (candidate_occurrences[j] == 1) {
-          exists_single_candidates = true;
-          for (const auto index : indices::columns[i]) {
-            for (const auto candidate : candidates[index]) {
-              if (candidate == j) {
-                singles[index] = j;
-              }
-            }
-          }
-        }
-      }
-      std::cout << "column " << i << " occurrences: ";
-      for (const int j : candidate_occurrences) {
-        std::cout << ' ' << j << ' ';
-      }
-      std::cout << '\n';
-    }
-    std::cout << '\n';
-
-    // check boxes
-    for (int i = 0; i < indices::boxes.size(); ++i) {
-      std::vector<int> candidate_occurrences(10);
-      for (const auto index : indices::boxes[i]) {
-        for (const auto candidate : candidates[index]) {
-          candidate_occurrences[candidate]++;
-        }
-      }
-      for (int j = 1; j < 10; ++j) {
-        if (candidate_occurrences[j] == 1) {
-          exists_single_candidates = true;
-          for (const auto index : indices::boxes[i]) {
-            for (const auto candidate : candidates[index]) {
-              if (candidate == j) {
-                singles[index] = j;
-              }
-            }
-          }
-        }
-      }
-      std::cout << "box " << i << " occurrences: ";
-      for (const int j : candidate_occurrences) {
-        std::cout << ' ' << j << ' ';
-      }
-      std::cout << '\n';
-    }
-    std::cout << '\n';
-
-    std::cout << "Explicit or Implicit single candidates:\n";
-    for (int i = 0; i < singles.size(); ++i) {
-      if (singles[i] != 0) {
-        std::cout << "Cell " << i << " : " << singles[i] << '\n';
-      }
-    }
-    std::cout << '\n';
-
-    // for each of the cells that has an implied candidate, update the puzzle
-    // with that value
-    for (int i = 0; i < singles.size(); ++i) {
-      if (singles[i] != 0) {
-        puzzle[i] = singles[i];
-      }
-    }
+    exists_single_candidates = solve_implicit_singles(singles);
 
     print_puzzle();
     ++iterations;
-    // check for errors
-    if (!is_valid()) {
-      std::cout << "AAAAHHH" << '\n';
-    }
+
+    check_puzzle();
   }
   for (const auto &puzzle : puzzles) {
     print_puzzle(puzzle);

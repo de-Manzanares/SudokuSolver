@@ -12,7 +12,8 @@
 
 #define EASY_
 #define MEDM_
-#define HARD_Y
+#define HARD_
+#define MAST_Y
 
 #ifdef EASY_Y
 std::vector<int> puzzle = {4, 8, 1, 3, 0, 0, 0, 7, 0, 5, 0, 7, 9, 8, 2, 0, 0,
@@ -36,6 +37,15 @@ std::vector<int> puzzle = {2, 9, 1, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 3, 9, 0,
                            9, 0, 0, 5, 7, 0, 6, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
                            5, 0, 0, 0, 0, 6, 0, 8, 0, 0, 0, 5, 0, 0, 0, 6, 0,
                            0, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
+#endif
+
+#ifdef MAST_Y
+std::vector<int> puzzle = {
+    3, 0, 0, 0, 0, 0, 7, 6, 0, 0, 0, 2, 0, 0, 3, 0, 0, 0, 5, 0, 8,
+    0, 7, 2, 0, 1, 0, 0, 4, 0, 0, 3, 0, 1, 2, 0, 0, 0, 1, 0, 6, 0,
+    0, 0, 5, 0, 2, 0, 0, 0, 0, 0, 3, 6, 1, 0, 0, 0, 0, 0, 0, 7, 0,
+    0, 0, 0, 0, 2, 0, 0, 4, 0, 0, 5, 0, 0, 0, 4, 0, 0, 3,
+};
 #endif
 
 static constexpr std::array<int, 3> intersection(const std::array<int, 9> &a,
@@ -414,6 +424,28 @@ int main() {
         }
       }
       if (quads.size() == 4) {
+        // calculate the union of the cells
+        std::set<int> cells;
+        for (auto it = quads.begin(); it != quads.end(); ++it) {
+          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
+            cells.insert(*iit);
+          }
+        }
+        if (cells.size() == 4) {
+          std::set<int> values;
+          for (auto &[value, idxs] : quads) {
+            values.insert(value);
+          }
+          for (const auto cell : cells) {
+            candidates[cell].erase(
+                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
+                               [&values](auto x) {
+                                 return std::find(values.begin(), values.end(),
+                                                  x) == values.end();
+                               }),
+                candidates[cell].end());
+          }
+        }
       }
     }
     // columns
@@ -484,6 +516,28 @@ int main() {
         }
       }
       if (quads.size() == 4) {
+        // calculate the union of the cells
+        std::set<int> cells;
+        for (auto it = quads.begin(); it != quads.end(); ++it) {
+          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
+            cells.insert(*iit);
+          }
+        }
+        if (cells.size() == 4) {
+          std::set<int> values;
+          for (auto &[value, idxs] : quads) {
+            values.insert(value);
+          }
+          for (const auto cell : cells) {
+            candidates[cell].erase(
+                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
+                               [&values](auto x) {
+                                 return std::find(values.begin(), values.end(),
+                                                  x) == values.end();
+                               }),
+                candidates[cell].end());
+          }
+        }
       }
     }
     // boxes
@@ -554,6 +608,28 @@ int main() {
         }
       }
       if (quads.size() == 4) {
+        // calculate the union of the cells
+        std::set<int> cells;
+        for (auto it = quads.begin(); it != quads.end(); ++it) {
+          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
+            cells.insert(*iit);
+          }
+        }
+        if (cells.size() == 4) {
+          std::set<int> values;
+          for (auto &[value, idxs] : quads) {
+            values.insert(value);
+          }
+          for (const auto cell : cells) {
+            candidates[cell].erase(
+                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
+                               [&values](auto x) {
+                                 return std::find(values.begin(), values.end(),
+                                                  x) == values.end();
+                               }),
+                candidates[cell].end());
+          }
+        }
       }
     }
 

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -365,9 +366,11 @@ int main() {
       for (const auto &[val, cells] : candidates_to_cells) {
         if (cells.size() == 2) {
           pairs[val] = cells;
-        } else if (1 < cells.size() && cells.size() < 4) {
+        }
+        if (1 < cells.size() && cells.size() < 4) {
           triples[val] = cells;
-        } else if (1 < cells.size() && cells.size() < 5) {
+        }
+        if (1 < cells.size() && cells.size() < 5) {
           quads[val] = cells;
         }
       }
@@ -387,7 +390,28 @@ int main() {
         }
       }
       if (triples.size() == 3) {
-        std::cout << "possible triple!\n";
+        // calculate the union of the cells
+        std::set<int> cells;
+        for (auto it = triples.begin(); it != triples.end(); ++it) {
+          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
+            cells.insert(*iit);
+          }
+        }
+        if (cells.size() == 3) {
+          std::set<int> values;
+          for (auto &[value, idxs] : triples) {
+            values.insert(value);
+          }
+          for (const auto cell : cells) {
+            candidates[cell].erase(
+                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
+                               [&values](auto x) {
+                                 return std::find(values.begin(), values.end(),
+                                                  x) == values.end();
+                               }),
+                candidates[cell].end());
+          }
+        }
       }
       if (quads.size() == 4) {
       }
@@ -405,16 +429,18 @@ int main() {
           }
         }
       }
-      // now we can search for the pairs/triples/quads in the column
+      // now we can search for the pairs/triples/quads in the row
       std::unordered_map<int, std::vector<int>> pairs;
       std::unordered_map<int, std::vector<int>> triples;
       std::unordered_map<int, std::vector<int>> quads;
       for (const auto &[val, cells] : candidates_to_cells) {
         if (cells.size() == 2) {
           pairs[val] = cells;
-        } else if (cells.size() == 3) {
+        }
+        if (1 < cells.size() && cells.size() < 4) {
           triples[val] = cells;
-        } else if (cells.size() == 4) {
+        }
+        if (1 < cells.size() && cells.size() < 5) {
           quads[val] = cells;
         }
       }
@@ -433,9 +459,31 @@ int main() {
           }
         }
       }
-      if (triples.size() >= 3) {
+      if (triples.size() == 3) {
+        // calculate the union of the cells
+        std::set<int> cells;
+        for (auto it = triples.begin(); it != triples.end(); ++it) {
+          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
+            cells.insert(*iit);
+          }
+        }
+        if (cells.size() == 3) {
+          std::set<int> values;
+          for (auto &[value, idxs] : triples) {
+            values.insert(value);
+          }
+          for (const auto cell : cells) {
+            candidates[cell].erase(
+                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
+                               [&values](auto x) {
+                                 return std::find(values.begin(), values.end(),
+                                                  x) == values.end();
+                               }),
+                candidates[cell].end());
+          }
+        }
       }
-      if (quads.size() >= 4) {
+      if (quads.size() == 4) {
       }
     }
     // boxes
@@ -451,16 +499,18 @@ int main() {
           }
         }
       }
-      // now we can search for the pairs/triples/quads in the box
+      // now we can search for the pairs/triples/quads in the row
       std::unordered_map<int, std::vector<int>> pairs;
       std::unordered_map<int, std::vector<int>> triples;
       std::unordered_map<int, std::vector<int>> quads;
       for (const auto &[val, cells] : candidates_to_cells) {
         if (cells.size() == 2) {
           pairs[val] = cells;
-        } else if (cells.size() == 3) {
+        }
+        if (1 < cells.size() && cells.size() < 4) {
           triples[val] = cells;
-        } else if (cells.size() == 4) {
+        }
+        if (1 < cells.size() && cells.size() < 5) {
           quads[val] = cells;
         }
       }
@@ -479,9 +529,31 @@ int main() {
           }
         }
       }
-      if (triples.size() >= 3) {
+      if (triples.size() == 3) {
+        // calculate the union of the cells
+        std::set<int> cells;
+        for (auto it = triples.begin(); it != triples.end(); ++it) {
+          for (auto iit = it->second.begin(); iit != it->second.end(); ++iit) {
+            cells.insert(*iit);
+          }
+        }
+        if (cells.size() == 3) {
+          std::set<int> values;
+          for (auto &[value, idxs] : triples) {
+            values.insert(value);
+          }
+          for (const auto cell : cells) {
+            candidates[cell].erase(
+                std::remove_if(candidates[cell].begin(), candidates[cell].end(),
+                               [&values](auto x) {
+                                 return std::find(values.begin(), values.end(),
+                                                  x) == values.end();
+                               }),
+                candidates[cell].end());
+          }
+        }
       }
-      if (quads.size() >= 4) {
+      if (quads.size() == 4) {
       }
     }
 
@@ -884,11 +956,11 @@ int main() {
       std::cout << "AAAAHHH" << '\n';
     }
   }
-  std::cout << "Applied " << iterations
-            << " iterations of deductive logic.\n\n";
   for (const auto &puzzle : puzzles) {
     print_puzzle(puzzle);
   }
+  std::cout << "Applied " << iterations
+            << " iterations of deductive logic.\n\n";
 }
 
 bool check_validity(const std::array<const std::array<int, 9> *, 9> &scope) {

@@ -5,12 +5,13 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #define EASY_
-#define MEDM_Y
-#define HARD_
+#define MEDM_
+#define HARD_Y
 
 #ifdef EASY_Y
 std::vector<int> puzzle = {4, 8, 1, 3, 0, 0, 0, 7, 0, 5, 0, 7, 9, 8, 2, 0, 0,
@@ -598,6 +599,154 @@ int main() {
             }
           }
         }
+      }
+    }
+
+    // hidden pair/triple/quad
+    // for each row, column, and box
+    // if there exists an identical pair of candidates in two cells, but nowhere
+    // else in the house, then all other candidates from those cells can be
+    // removed.
+
+    // rows
+    for (int i = 0; i < 9; ++i) { // for each row
+      std::unordered_map<int, std::vector<int>> candidates_to_cells;
+      // for each candidate, find in which cells of the house it resides
+      for (int val = 1; val < 10; ++val) {
+        for (const auto index : *indices::rows[i]) {
+          for (const auto candidate : candidates[index]) {
+            if (val == candidate) {
+              candidates_to_cells[val].push_back(index);
+            }
+          }
+        }
+      }
+      // now we can search for the pairs/triples/quads in the row
+      std::unordered_map<int, std::vector<int>> pairs;
+      std::unordered_map<int, std::vector<int>> triples;
+      std::unordered_map<int, std::vector<int>> quads;
+      for (const auto &[val, cells] : candidates_to_cells) {
+        if (cells.size() == 2) {
+          pairs[val] = cells;
+        } else if (cells.size() == 3) {
+          triples[val] = cells;
+        } else if (cells.size() == 4) {
+          quads[val] = cells;
+        }
+      }
+      if (pairs.size() == 2) {
+        // compare every pair to every other pair
+        if (pairs.begin()->second == std::next(pairs.begin())->second) {
+          std::cout << "HIDDEN PAIR!\n";
+          for (int j = 0; j < 2; ++j) {
+            candidates[pairs.begin()->second[j]].erase(
+                std::remove_if(candidates[pairs.begin()->second[j]].begin(),
+                               candidates[pairs.begin()->second[j]].end(),
+                               [&pairs](auto x) {
+                                 return !(x == pairs.begin()->first ||
+                                          x == std::next(pairs.begin())->first);
+                               }),
+                candidates[pairs.begin()->second[j]].end());
+          }
+        }
+      }
+      if (triples.size() >= 3) {
+      }
+      if (quads.size() >= 4) {
+      }
+    }
+    // columns
+    for (int i = 0; i < 9; ++i) { // for each column
+      std::unordered_map<int, std::vector<int>> candidates_to_cells;
+      // for each candidate, find in which cells of the house it resides
+      for (int val = 1; val < 10; ++val) {
+        for (const auto index : *indices::columns[i]) {
+          for (const auto candidate : candidates[index]) {
+            if (val == candidate) {
+              candidates_to_cells[val].push_back(index);
+            }
+          }
+        }
+      }
+      // now we can search for the pairs/triples/quads in the column
+      std::unordered_map<int, std::vector<int>> pairs;
+      std::unordered_map<int, std::vector<int>> triples;
+      std::unordered_map<int, std::vector<int>> quads;
+      for (const auto &[val, cells] : candidates_to_cells) {
+        if (cells.size() == 2) {
+          pairs[val] = cells;
+        } else if (cells.size() == 3) {
+          triples[val] = cells;
+        } else if (cells.size() == 4) {
+          quads[val] = cells;
+        }
+      }
+      if (pairs.size() == 2) {
+        // compare every pair to every other pair
+        if (pairs.begin()->second == std::next(pairs.begin())->second) {
+          std::cout << "HIDDEN PAIR!\n";
+          for (int j = 0; j < 2; ++j) {
+            candidates[pairs.begin()->second[j]].erase(
+                std::remove_if(candidates[pairs.begin()->second[j]].begin(),
+                               candidates[pairs.begin()->second[j]].end(),
+                               [&pairs](auto x) {
+                                 return !(x == pairs.begin()->first ||
+                                          x == std::next(pairs.begin())->first);
+                               }),
+                candidates[pairs.begin()->second[j]].end());
+          }
+        }
+      }
+      if (triples.size() >= 3) {
+      }
+      if (quads.size() >= 4) {
+      }
+    }
+    // boxs
+    for (int i = 0; i < 9; ++i) { // for each box
+      std::unordered_map<int, std::vector<int>> candidates_to_cells;
+      // for each candidate, find in which cells of the house it resides
+      for (int val = 1; val < 10; ++val) {
+        for (const auto index : *indices::boxes[i]) {
+          for (const auto candidate : candidates[index]) {
+            if (val == candidate) {
+              candidates_to_cells[val].push_back(index);
+            }
+          }
+        }
+      }
+      // now we can search for the pairs/triples/quads in the box
+      std::unordered_map<int, std::vector<int>> pairs;
+      std::unordered_map<int, std::vector<int>> triples;
+      std::unordered_map<int, std::vector<int>> quads;
+      for (const auto &[val, cells] : candidates_to_cells) {
+        if (cells.size() == 2) {
+          pairs[val] = cells;
+        } else if (cells.size() == 3) {
+          triples[val] = cells;
+        } else if (cells.size() == 4) {
+          quads[val] = cells;
+        }
+      }
+      if (pairs.size() == 2) {
+        // compare every pair to every other pair
+        if (pairs.begin()->second == std::next(pairs.begin())->second) {
+          std::cout << "HIDDEN PAIR!\n";
+          for (int j = 0; j < 2; ++j) {
+            candidates[pairs.begin()->second[j]].erase(
+                std::remove_if(candidates[pairs.begin()->second[j]].begin(),
+                               candidates[pairs.begin()->second[j]].end(),
+                               [&pairs](auto x) {
+                                 return !(x == pairs.begin()->first ||
+                                          x == std::next(pairs.begin())->first);
+                               }),
+                candidates[pairs.begin()->second[j]].end());
+          }
+        }
+      }
+      if (triples.size() >= 3) {
+      }
+      if (quads.size() >= 4) {
       }
     }
 

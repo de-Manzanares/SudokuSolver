@@ -8,26 +8,33 @@
 #include <unordered_set>
 #include <vector>
 
-// easy
-// std::vector<int> puzzle = {4, 8, 1, 3, 0, 0, 0, 7, 0, 5, 0, 7, 9, 8, 2, 0, 0,
-//                            0, 3, 0, 0, 1, 0, 0, 0, 6, 8, 0, 3, 0, 0, 0, 0, 1,
-//                            8, 5, 0, 9, 0, 0, 2, 5, 0, 0, 4, 0, 7, 0, 4, 0, 3,
-//                            0, 0, 9, 0, 0, 0, 2, 9, 0, 8, 0, 0, 6, 1, 2, 0, 0,
-//                            0, 4, 0, 0, 0, 0, 8, 0, 4, 7, 2, 1, 0};
+#define EASY_
+#define MEDM_Y
+#define HARD_
 
-// medium
-// std::vector<int> puzzle = {0, 0, 0, 0, 0, 2, 8, 0, 6, 3, 0, 1, 0, 0, 0, 2, 0,
-//                            0, 0, 2, 0, 5, 0, 6, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0,
-//                            0, 5, 0, 3, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0,
-//                            3, 0, 0, 0, 0, 9, 0, 6, 0, 5, 0, 0, 0, 4, 0, 0, 0,
-//                            0, 0, 0, 7, 1, 0, 0, 8, 0, 0, 0, 0, 0};
+#ifdef EASY_Y
+std::vector<int> puzzle = {4, 8, 1, 3, 0, 0, 0, 7, 0, 5, 0, 7, 9, 8, 2, 0, 0,
+                           0, 3, 0, 0, 1, 0, 0, 0, 6, 8, 0, 3, 0, 0, 0, 0, 1,
+                           8, 5, 0, 9, 0, 0, 2, 5, 0, 0, 4, 0, 7, 0, 4, 0, 3,
+                           0, 0, 9, 0, 0, 0, 2, 9, 0, 8, 0, 0, 6, 1, 2, 0, 0,
+                           0, 4, 0, 0, 0, 0, 8, 0, 4, 7, 2, 1, 0};
+#endif
 
-// hard
+#ifdef MEDM_Y
+std::vector<int> puzzle = {0, 0, 0, 0, 0, 2, 8, 0, 6, 3, 0, 1, 0, 0, 0, 2, 0,
+                           0, 0, 2, 0, 5, 0, 6, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0,
+                           0, 5, 0, 3, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0,
+                           3, 0, 0, 0, 0, 9, 0, 6, 0, 5, 0, 0, 0, 4, 0, 0, 0,
+                           0, 0, 0, 7, 1, 0, 0, 8, 0, 0, 0, 0, 0};
+#endif
+
+#ifdef HARD_Y
 std::vector<int> puzzle = {2, 9, 1, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 3, 9, 0,
                            0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 0, 6, 0, 2, 3, 0, 0,
                            9, 0, 0, 5, 7, 0, 6, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
                            5, 0, 0, 0, 0, 6, 0, 8, 0, 0, 0, 5, 0, 0, 0, 6, 0,
                            0, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
+#endif
 
 static constexpr std::array<int, 3> intersection(const std::array<int, 9> &a,
                                                  const std::array<int, 9> &b) {
@@ -337,7 +344,6 @@ int main() {
     // column, that digit cannot appear outside of that block in that row or
     // column.
     // identify if a candidate only appears in one row or column of a box
-    std::vector<std::vector<int>> pl_candidates(candidates); // copy
 
     for (int i = 0; i < 9; ++i) {   // intersections
       for (int j = 0; j < 2; ++j) { // 0: rows, 1: columns
@@ -398,10 +404,10 @@ int main() {
                   if (std::find(indices::subranges[i][j][k]->begin(),
                                 indices::subranges[i][j][k]->end(),
                                 index) == indices::subranges[i][j][k]->end()) {
-                    for (auto it = pl_candidates[index].begin();
-                         it != pl_candidates[index].end();) {
+                    for (auto it = candidates[index].begin();
+                         it != candidates[index].end();) {
                       if (*it == val) {
-                        it = pl_candidates[index].erase(it);
+                        it = candidates[index].erase(it);
                       } else {
                         ++it;
                       }
@@ -424,10 +430,10 @@ int main() {
                   if (std::find(indices::subranges[i][j][k]->begin(),
                                 indices::subranges[i][j][k]->end(),
                                 index) == indices::subranges[i][j][k]->end()) {
-                    for (auto it = pl_candidates[index].begin();
-                         it != pl_candidates[index].end();) {
+                    for (auto it = candidates[index].begin();
+                         it != candidates[index].end();) {
                       if (*it == val) {
-                        it = pl_candidates[index].erase(it);
+                        it = candidates[index].erase(it);
                       } else {
                         ++it;
                       }
@@ -447,8 +453,6 @@ int main() {
     // one block, that candidate that be eliminated from all other cells in that
     // block.
     // identify if a candidate only appears in one box or a row or column
-
-    std::vector<std::vector<int>> cl_candidates(candidates);
 
     // rows
     for (int i = 0; i < 9; ++i) {           // for each row
@@ -512,10 +516,10 @@ int main() {
             for (const auto index : *indices::boxes[choose_box()]) {
               if (std::find(indices::rows[i]->begin(), indices::rows[i]->end(),
                             index) == indices::rows[i]->end()) {
-                cl_candidates[index].erase(
-                    std::remove(cl_candidates[index].begin(),
-                                cl_candidates[index].end(), val),
-                    cl_candidates[index].end());
+                candidates[index].erase(std::remove(candidates[index].begin(),
+                                                    candidates[index].end(),
+                                                    val),
+                                        candidates[index].end());
               }
             }
           }
@@ -586,26 +590,15 @@ int main() {
               if (std::find(indices::columns[i]->begin(),
                             indices::columns[i]->end(),
                             index) == indices::columns[i]->end()) {
-                cl_candidates[index].erase(
-                    std::remove(cl_candidates[index].begin(),
-                                cl_candidates[index].end(), val),
-                    cl_candidates[index].end());
+                candidates[index].erase(std::remove(candidates[index].begin(),
+                                                    candidates[index].end(),
+                                                    val),
+                                        candidates[index].end());
               }
             }
           }
         }
       }
-    }
-
-    // update candidates to be the intersection of pl_cand's and cl_cand's
-    for (int i = 0; i < candidates.size(); ++i) {
-      // sort just in case
-      std::sort(pl_candidates[i].begin(), pl_candidates[i].end());
-      std::sort(cl_candidates[i].begin(), cl_candidates[i].end());
-      candidates[i].clear();
-      std::set_intersection(cl_candidates[i].begin(), cl_candidates[i].end(),
-                            pl_candidates[i].begin(), pl_candidates[i].end(),
-                            std::back_inserter(candidates[i]));
     }
 
     // print candidates

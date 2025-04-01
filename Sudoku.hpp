@@ -180,6 +180,7 @@ class Sudoku {
   [[nodiscard]] bool check_validity(int value, int val_index) const;
 
   void find_unknown_indices();
+  void find_candidates();
   void find_candidates(int cell);
 
   void prune_hidden_subsets(house tag);
@@ -220,6 +221,7 @@ class Sudoku {
 
 inline void Sudoku::solve() {
   find_unknown_indices();
+  find_candidates();
 
   while (_sc) {
     _sc = false;
@@ -227,14 +229,6 @@ inline void Sudoku::solve() {
 
     if (_unknown.none()) {
       break; // exit if the puzzle is solved
-    }
-
-    _candidates.clear();
-    _candidates.resize(PUZZLE_SIZE);
-    for (int i = 0; i < PUZZLE_SIZE; ++i) {
-      if (_unknown[i]) {
-        find_candidates(i);
-      }
     }
 
     print_unknown();
@@ -340,6 +334,16 @@ inline void Sudoku::find_unknown_indices() {
   for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_puzzle[i] == UNKNOWN) {
       _unknown.set(i);
+    }
+  }
+}
+
+inline void Sudoku::find_candidates() {
+  _candidates.clear();
+  _candidates.resize(PUZZLE_SIZE);
+  for (int i = 0; i < PUZZLE_SIZE; ++i) {
+    if (_unknown[i]) {
+      find_candidates(i);
     }
   }
 }

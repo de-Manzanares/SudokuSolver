@@ -207,7 +207,7 @@ class Sudoku {
   static constexpr int PUZZLE_SIZE = 81; ///< 81 cells in the puzzle
 
   std::vector<int> _puzzle; ///< the puzzle
-  std::bitset<PUZZLE_SIZE> _unknown;
+  std::bitset<PUZZLE_SIZE> _unknown{};
   std::vector<std::vector<int>> _candidates;
   std::array<int, 81> _singles{};
 
@@ -217,16 +217,19 @@ class Sudoku {
 };
 
 inline void Sudoku::solve() {
+  find_unknown_indices();
+
   while (_sc) {
     _sc = false;
     _puzzles.push_back(_puzzle);
-    find_unknown_indices();
+
     if (_unknown.none()) {
       break; // exit if the puzzle is solved
     }
-    print_unknown();
 
     find_candidates();
+
+    print_unknown();
     print_candidates("Candidates:\n", _candidates);
 
     prune_hidden_subsets(house::row);
@@ -719,6 +722,8 @@ inline void Sudoku::solve_explicit_singles() {
   for (int i = 0; i < _candidates.size(); ++i) {
     if (_candidates[i].size() == 1) {
       _puzzle[i] = _candidates[i][0];
+      _candidates[i].clear();
+      _unknown.reset(i);
       if (!printed_message) {
         std::cout << "Applying naked singles ...\n\n";
         printed_message = true;
@@ -732,6 +737,8 @@ inline void Sudoku::solve_implicit_singles() {
   for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_singles[i] != 0) {
       _puzzle[i] = _singles[i];
+      _singles[i] = 0;
+      _unknown.reset(i);
       _sc = true;
       if (!printed_message) {
         std::cout << "Applying hidden singles ...\n\n";

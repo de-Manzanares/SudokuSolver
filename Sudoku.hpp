@@ -180,7 +180,7 @@ class Sudoku {
   [[nodiscard]] bool check_validity(int value, int val_index) const;
 
   void find_unknown_indices();
-  void find_candidates();
+  void find_candidates(int cell);
 
   void prune_hidden_subsets(house tag);
   void prune_claiming_locked_candidates(house tag);
@@ -208,7 +208,7 @@ class Sudoku {
 
   std::vector<int> _puzzle; ///< the puzzle
   std::bitset<PUZZLE_SIZE> _unknown{};
-  std::vector<std::vector<int>> _candidates;
+  std::vector<std::vector<int>> _candidates{PUZZLE_SIZE};
   std::array<int, 81> _singles{};
 
   bool _sc = true; ///< we have found at least one single this iteration
@@ -227,7 +227,13 @@ inline void Sudoku::solve() {
       break; // exit if the puzzle is solved
     }
 
-    find_candidates();
+    _candidates.clear();
+    _candidates.resize(PUZZLE_SIZE);
+    for (int i = 0; i < PUZZLE_SIZE; ++i) {
+      if (_unknown[i]) {
+        find_candidates(i);
+      }
+    }
 
     print_unknown();
     print_candidates("Candidates:\n", _candidates);
@@ -336,16 +342,21 @@ inline void Sudoku::find_unknown_indices() {
   }
 }
 
-inline void Sudoku::find_candidates() {
-  _candidates.clear();
-  _candidates.resize(PUZZLE_SIZE);
-  for (int i = 0; i < PUZZLE_SIZE; ++i) {
-    if (_unknown[i]) {
-      for (int j = 1; j < 10; ++j) {
-        if (check_validity(j, i)) {
-          _candidates[i].push_back(j);
-        }
-      }
+inline void Sudoku::find_candidates(const int cell) {
+  // count every occurrence of a value for that cell's houses
+  // the candidates are the complement of that set
+  std::bitset<10> seen;
+  for (int i = 0; i < 3; ++i) {
+    for (const auto index :
+         i == 2   ? indices::boxes[indices::associations[cell][i]]
+         : i == 1 ? indices::columns[indices::associations[cell][i]]
+                  : indices::rows[indices::associations[cell][i]]) {
+      seen.set(_puzzle[index]);
+    }
+  }
+  for (int i = 1; i < 10; ++i) {
+    if (!seen[i]) {
+      _candidates[cell].push_back(i);
     }
   }
 }

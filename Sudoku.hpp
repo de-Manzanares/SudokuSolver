@@ -5,6 +5,7 @@
 #include <array>
 #include <bitset>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <list>
 #include <map>
@@ -182,14 +183,17 @@ class Sudoku {
   void find_unknown_indices();
   void find_candidates();
   void find_candidates(int cell);
+  bool prune_hidden_subsets();
 
-  void prune_hidden_subsets(house tag);
-  void prune_claiming_locked_candidates(house tag);
-  void prune_pointing_locked_candidates();
+  bool prune_hidden_subsets(house tag);
+  bool prune_claiming_locked_candidates();
+  bool prune_claiming_locked_candidates(house tag);
+  bool prune_pointing_locked_candidates();
 
   void reset_singles();
-  void find_implicit_singles(house tag);
-  void solve_explicit_singles();
+  bool find_implicit_singles();
+  bool find_implicit_singles(house tag);
+  bool solve_explicit_singles();
   void solve_implicit_singles();
 
   void update_candidates(int cell);
@@ -217,48 +221,86 @@ class Sudoku {
   bool _sc = true; ///< we have found at least one single this iteration
   int _iterations{};
   std::vector<std::vector<int>> _puzzles;
+  int _naked_singles{};
+  int _hidden_singles{};
 };
 
 inline void Sudoku::solve() {
   find_unknown_indices();
   find_candidates();
+  print_candidates("Candidates:\n", _candidates);
 
-  while (_sc) {
-    _sc = false;
-    _puzzles.push_back(_puzzle);
+  bool progress = true;
+  while (progress) {
+    progress = false;
 
-    if (_unknown.none()) {
-      break; // exit if the puzzle is solved
+    if (solve_explicit_singles()) {
+      std::cout << '\n';
+      print_puzzle();
+      progress = true;
+      continue;
     }
 
-    print_unknown();
-    print_candidates("Candidates:\n", _candidates);
+    if (find_implicit_singles()) {
+      solve_implicit_singles();
+      std::cout << '\n';
+      print_puzzle();
+      progress = true;
+      continue;
+    }
 
-    prune_hidden_subsets(house::row);
-    prune_hidden_subsets(house::column);
-    prune_hidden_subsets(house::box);
+    if (prune_claiming_locked_candidates()) {
+      progress = true;
+      continue;
+    }
 
-    prune_claiming_locked_candidates(house::row);
-    prune_claiming_locked_candidates(house::column);
+    if (prune_pointing_locked_candidates()) {
+      progress = true;
+      continue;
+    }
 
-    prune_pointing_locked_candidates();
-
-    print_candidates("Pruned Candidates:\n", _candidates);
-
-    solve_explicit_singles();
-
-    reset_singles();
-    find_implicit_singles(house::row);
-    find_implicit_singles(house::column);
-    find_implicit_singles(house::box);
-    print_singles();
-
-    solve_implicit_singles();
-
-    print_puzzle();
-    ++_iterations;
-    check_puzzle();
+    // if (prune_hidden_subsets()) {
+    //   progress = true;
+    //   continue;
+    // }
   }
+
+  // while (_sc) {
+  //   _sc = false;
+  //   _puzzles.push_back(_puzzle);
+
+  //   if (_unknown.none()) {
+  //     break; // exit if the puzzle is solved
+  //   }
+
+  //   print_unknown();
+  //   print_candidates("Candidates:\n", _candidates);
+
+  //   prune_hidden_subsets(house::row);
+  //   prune_hidden_subsets(house::column);
+  //   prune_hidden_subsets(house::box);
+
+  //   prune_claiming_locked_candidates(house::row);
+  //   prune_claiming_locked_candidates(house::column);
+
+  //   prune_pointing_locked_candidates();
+
+  //   print_candidates("Pruned Candidates:\n", _candidates);
+
+  //   solve_explicit_singles();
+
+  //   reset_singles();
+  //   find_implicit_singles(house::row);
+  //   find_implicit_singles(house::column);
+  //   find_implicit_singles(house::box);
+  //   print_singles();
+
+  //   solve_implicit_singles();
+
+  //   print_puzzle();
+  //   ++_iterations;
+  //   check_puzzle();
+  // }
 }
 
 // begin checking validity -----------------------------------------------------
@@ -391,7 +433,15 @@ inline void Sudoku::find_candidates(const int cell) {
 // column.
 // identify if a candidate only appears in one row or column of a box
 
-inline void Sudoku::prune_hidden_subsets(const house tag) {
+inline bool Sudoku::prune_hidden_subsets() {
+  bool row = prune_hidden_subsets(house::row);
+  bool column = prune_hidden_subsets(house::column);
+  bool box = prune_hidden_subsets(house::box);
+  return row || column || box;
+}
+
+inline bool Sudoku::prune_hidden_subsets(const house tag) {
+  bool got_one = false;
   auto &houses = tag == house::row      ? indices::rows
                  : tag == house::column ? indices::columns
                                         : indices::boxes;
@@ -438,13 +488,31 @@ inline void Sudoku::prune_hidden_subsets(const house tag) {
           values.insert(value);
         }
         for (const auto cell : cells) {
-          _candidates[cell].erase(
-              std::remove_if(_candidates[cell].begin(), _candidates[cell].end(),
-                             [&values](auto x) {
-                               return std::find(values.begin(), values.end(),
-                                                x) == values.end();
-                             }),
-              _candidates[cell].end());
+          if (!got_one) {
+            if (std::any_of(_candidates[cell].begin(), _candidates[cell].end(),
+                            [&values](const auto c) {
+                              return values.find(c) == values.end();
+                            })) {
+              got_one = true;
+            }
+          }
+          if (got_one) {
+            _candidates[cell].erase(
+                std::remove_if(_candidates[cell].begin(),
+                               _candidates[cell].end(),
+                               [&values](auto x) {
+                                 return std::find(values.begin(), values.end(),
+                                                  x) == values.end();
+                               }),
+                _candidates[cell].end());
+          }
+        }
+        if (got_one) {
+          std::cout << "hidden pairs: ";
+          for (const auto cell : cells) {
+            std::cout << std::setw(2) << cell << ' ';
+          }
+          std::cout << '\n';
         }
       }
     }
@@ -497,9 +565,17 @@ inline void Sudoku::prune_hidden_subsets(const house tag) {
       }
     }
   }
+  return got_one;
 }
 
-inline void Sudoku::prune_claiming_locked_candidates(const house tag) {
+inline bool Sudoku::prune_claiming_locked_candidates() {
+  const bool row = prune_claiming_locked_candidates(house::row);
+  const bool column = prune_claiming_locked_candidates(house::column);
+  return row || column;
+}
+
+inline bool Sudoku::prune_claiming_locked_candidates(const house tag) {
+  bool got_one = false;
   const auto &houses = tag == house::row ? indices::rows : indices::columns;
   for (int i = 0; i < 9; ++i) {
     std::vector<std::vector<int>> set(3); // to hold candidates from each box
@@ -578,19 +654,28 @@ inline void Sudoku::prune_claiming_locked_candidates(const house tag) {
           for (const auto index : indices::boxes[choose_box()]) {
             if (std::find(houses[i].begin(), houses[i].end(), index) ==
                 houses[i].end()) {
-              _candidates[index].erase(std::remove(_candidates[index].begin(),
-                                                   _candidates[index].end(),
-                                                   val),
-                                       _candidates[index].end());
+              if (std::find(_candidates[index].begin(),
+                            _candidates[index].end(),
+                            val) != _candidates[index].end()) {
+                got_one = true;
+                std::cout << "claiming locked candidate: " << std::setw(2)
+                          << index << " " << val << '\n';
+                _candidates[index].erase(std::remove(_candidates[index].begin(),
+                                                     _candidates[index].end(),
+                                                     val),
+                                         _candidates[index].end());
+              }
             }
           }
         }
       }
     }
   }
+  return got_one;
 }
 
-inline void Sudoku::prune_pointing_locked_candidates() {
+inline bool Sudoku::prune_pointing_locked_candidates() {
+  bool got_one = false;
   for (int i = 0; i < 9; ++i) {   // intersections
     for (int j = 0; j < 2; ++j) { // 0: rows, 1: columns
       std::vector<std::vector<int>> set(3);
@@ -652,6 +737,9 @@ inline void Sudoku::prune_pointing_locked_candidates() {
                   for (auto it = _candidates[index].begin();
                        it != _candidates[index].end();) {
                     if (*it == val) {
+                      std::cout << "pointing locked candidate: " << std::setw(2)
+                                << index << " " << val << '\n';
+                      got_one = true;
                       it = _candidates[index].erase(it);
                     } else {
                       ++it;
@@ -678,6 +766,9 @@ inline void Sudoku::prune_pointing_locked_candidates() {
                   for (auto it = _candidates[index].begin();
                        it != _candidates[index].end();) {
                     if (*it == val) {
+                      std::cout << "pointing locked candidate: " << std::setw(2)
+                                << index << " " << val << '\n';
+                      got_one = true;
                       it = _candidates[index].erase(it);
                     } else {
                       ++it;
@@ -691,6 +782,7 @@ inline void Sudoku::prune_pointing_locked_candidates() {
       }
     }
   }
+  return got_one;
 }
 
 // end - prune candidates ------------------------------------------------------
@@ -700,7 +792,15 @@ inline void Sudoku::reset_singles() {
   _singles.fill(0);
 }
 
-inline void Sudoku::find_implicit_singles(const house tag) {
+inline bool Sudoku::find_implicit_singles() {
+  const bool row = find_implicit_singles(house::row);
+  const bool column = find_implicit_singles(house::column);
+  const bool box = find_implicit_singles(house::box);
+  return row || column || box;
+}
+
+inline bool Sudoku::find_implicit_singles(const house tag) {
+  bool got_one = false;
   const auto &houses = tag == house::row      ? indices::rows
                        : tag == house::column ? indices::columns
                                               : indices::boxes;
@@ -720,18 +820,20 @@ inline void Sudoku::find_implicit_singles(const house tag) {
           for (const auto candidate : _candidates[index]) {
             if (candidate == j) {
               _singles[index] = j;
+              got_one = true;
             }
           }
         }
       }
     }
-    std::cout << label << i << " occurrences: ";
-    for (const int j : candidate_occurrences) {
-      std::cout << ' ' << j << ' ';
-    }
-    std::cout << '\n';
+    // std::cout << label << i << " occurrences: ";
+    // for (const int j : candidate_occurrences) {
+    //   std::cout << ' ' << j << ' ';
+    // }
+    // std::cout << '\n';
   }
-  std::cout << '\n';
+  // std::cout << '\n';
+  return got_one;
 }
 
 inline void Sudoku::update_candidates(const int cell) {
@@ -748,34 +850,34 @@ inline void Sudoku::update_candidates(const int cell) {
   }
 }
 
-inline void Sudoku::solve_explicit_singles() {
-  bool printed_message = false;
+inline bool Sudoku::solve_explicit_singles() {
+  bool got_one = false;
   for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_candidates[i].size() == 1) {
+      got_one = true;
+      ++_naked_singles;
       _puzzle[i] = _candidates[i][0];
-      update_candidates(i);
       _unknown.reset(i);
-      if (!printed_message) {
-        std::cout << "Applying naked singles ...\n\n";
-        printed_message = true;
-      }
+      update_candidates(i);
+      std::cout << "naked single : " << std::setw(2) << i << " " << _puzzle[i]
+                << '\n';
     }
   }
+  return got_one;
 }
 
 inline void Sudoku::solve_implicit_singles() {
-  bool printed_message = false;
   for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_singles[i] != 0) {
+      ++_hidden_singles;
       _puzzle[i] = _singles[i];
+      _singles[i] = 0;
       update_candidates(i);
       _candidates[i].clear();
       _unknown.reset(i);
       _sc = true;
-      if (!printed_message) {
-        std::cout << "Applying hidden singles ...\n\n";
-        printed_message = true;
-      }
+      std::cout << "hidden single : " << std::setw(2) << i << " " << _puzzle[i]
+                << '\n';
     }
   }
 }
@@ -851,11 +953,10 @@ inline void Sudoku::print_singles() const {
 }
 
 inline void Sudoku::print_readout() const {
-  for (const auto &puzzle : _puzzles) {
-    print_puzzle(puzzle);
-  }
-  std::cout << "Applied " << _iterations
-            << " iterations of deductive logic.\n\n";
+  std::cout << "\n\nApplied\n\t";
+  std::cout << "Naked Singles  : " << std::setw(5) << _naked_singles << "\n\t";
+  std::cout << "Hidden Singles : " << std::setw(5) << _hidden_singles << "\n\t";
+  // std::cout << "\nCandidates eliminated by: " <<
 }
 
 #endif // SUDOKU_HPP_

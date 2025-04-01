@@ -191,6 +191,8 @@ class Sudoku {
   void solve_explicit_singles();
   void solve_implicit_singles();
 
+  void update_candidates(int cell);
+
   void solve();
 
   void print_puzzle() const;
@@ -728,12 +730,26 @@ inline void Sudoku::find_implicit_singles(const house tag) {
   std::cout << '\n';
 }
 
+inline void Sudoku::update_candidates(const int cell) {
+  const int val = _puzzle[cell];
+  for (int i = 0; i < 3; ++i) {
+    for (const auto index :
+         i == 2   ? indices::boxes[indices::associations[cell][i]]
+         : i == 1 ? indices::columns[indices::associations[cell][i]]
+                  : indices::rows[indices::associations[cell][i]]) {
+      _candidates[index].erase(std::remove(_candidates[index].begin(),
+                                           _candidates[index].end(), val),
+                               _candidates[index].end());
+    }
+  }
+}
+
 inline void Sudoku::solve_explicit_singles() {
   bool printed_message = false;
-  for (int i = 0; i < _candidates.size(); ++i) {
+  for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_candidates[i].size() == 1) {
       _puzzle[i] = _candidates[i][0];
-      _candidates[i].clear();
+      update_candidates(i);
       _unknown.reset(i);
       if (!printed_message) {
         std::cout << "Applying naked singles ...\n\n";
@@ -748,7 +764,8 @@ inline void Sudoku::solve_implicit_singles() {
   for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_singles[i] != 0) {
       _puzzle[i] = _singles[i];
-      _singles[i] = 0;
+      update_candidates(i);
+      _candidates[i].clear();
       _unknown.reset(i);
       _sc = true;
       if (!printed_message) {
@@ -759,7 +776,8 @@ inline void Sudoku::solve_implicit_singles() {
   }
 }
 
-// begin - printing ------------------------------------------------------------
+// begin - printing
+// ------------------------------------------------------------
 
 inline void Sudoku::print_puzzle() const {
   for (int i = 0; i < _puzzle.size(); ++i) {

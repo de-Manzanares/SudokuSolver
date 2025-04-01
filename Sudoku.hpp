@@ -245,6 +245,8 @@ inline void Sudoku::solve() {
 
     print_candidates("Pruned Candidates:\n", _candidates);
 
+    solve_explicit_singles();
+
     reset_singles();
     find_implicit_singles(house::row);
     find_implicit_singles(house::column);
@@ -252,8 +254,6 @@ inline void Sudoku::solve() {
     print_singles();
 
     solve_implicit_singles();
-
-    solve_explicit_singles();
 
     print_puzzle();
     ++_iterations;

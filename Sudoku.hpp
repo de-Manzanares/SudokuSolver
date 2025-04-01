@@ -207,7 +207,7 @@ class Sudoku {
   static constexpr int PUZZLE_SIZE = 81; ///< 81 cells in the puzzle
 
   std::vector<int> _puzzle; ///< the puzzle
-  std::vector<int> _unknown;
+  std::bitset<PUZZLE_SIZE> _unknown;
   std::vector<std::vector<int>> _candidates;
   std::array<int, 81> _singles{};
 
@@ -221,7 +221,7 @@ inline void Sudoku::solve() {
     _sc = false;
     _puzzles.push_back(_puzzle);
     find_unknown_indices();
-    if (_unknown.empty()) {
+    if (_unknown.none()) {
       break; // exit if the puzzle is solved
     }
     print_unknown();
@@ -325,11 +325,10 @@ inline bool Sudoku::check_validity(const int value, const int val_index) const {
 // begin - create candidates ---------------------------------------------------
 
 inline void Sudoku::find_unknown_indices() {
-  _unknown.clear();
-  _unknown.reserve(PUZZLE_SIZE);
+  _unknown.reset();
   for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_puzzle[i] == UNKNOWN) {
-      _unknown.emplace_back(i);
+      _unknown.set(i);
     }
   }
 }
@@ -337,10 +336,12 @@ inline void Sudoku::find_unknown_indices() {
 inline void Sudoku::find_candidates() {
   _candidates.clear();
   _candidates.resize(PUZZLE_SIZE);
-  for (const auto index : _unknown) {
-    for (int i = 1; i < 10; ++i) {
-      if (check_validity(i, index)) {
-        _candidates[index].push_back(i);
+  for (int i = 0; i < PUZZLE_SIZE; ++i) {
+    if (_unknown[i]) {
+      for (int j = 1; j < 10; ++j) {
+        if (check_validity(j, i)) {
+          _candidates[i].push_back(j);
+        }
       }
     }
   }
@@ -772,8 +773,10 @@ inline void Sudoku::print_puzzle(const std::vector<int> &vec) {
 
 inline void Sudoku::print_unknown() {
   std::cout << "Unknown Cells:\n";
-  for (const auto v : _unknown) {
-    std::cout << v << " ";
+  for (int i = 0; i < PUZZLE_SIZE; ++i) {
+    if (_unknown[i]) {
+      std::cout << i << " ";
+    }
   }
   std::cout << "\n\n";
 }

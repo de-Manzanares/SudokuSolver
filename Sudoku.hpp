@@ -223,6 +223,13 @@ class Sudoku {
   std::vector<std::vector<int>> _puzzles;
   int _naked_singles{};
   int _hidden_singles{};
+
+  struct _candidates_pruned_by {
+    int _claiming_locked{};
+    int _pointing_locked{};
+  };
+
+  _candidates_pruned_by _candidates_pruned_by{};
 };
 
 inline void Sudoku::solve() {
@@ -419,13 +426,6 @@ inline void Sudoku::find_candidates(const int cell) {
 // else in the house, then all other candidates from those cells can be
 // removed.
 
-// claiming locked candidates
-// https://hodoku.sourceforge.net/en/tech_intersections.php
-// If in a row (or column) all candidates of a certain digit are confined to
-// one block, that candidate that be eliminated from all other cells in that
-// block.
-// identify if a candidate only appears in one box or a row or column
-
 // pointing locked candidates
 // https://hodoku.sourceforge.net/en/tech_intersections.php
 // If in a block all candidates of a certain digit are confined to a row or
@@ -574,56 +574,71 @@ inline bool Sudoku::prune_claiming_locked_candidates() {
   return row || column;
 }
 
+// claiming locked candidates
+// https://hodoku.sourceforge.net/en/tech_intersections.php
+// If in a row (or column) all candidates of a certain digit are confined to
+// one block, that candidate that be eliminated from all other cells in that
+// block.
 inline bool Sudoku::prune_claiming_locked_candidates(const house tag) {
   bool got_one = false;
   const auto &houses = tag == house::row ? indices::rows : indices::columns;
-  for (int i = 0; i < 9; ++i) {
-    std::vector<std::vector<int>> set(3); // to hold candidates from each box
-    for (int j = 0; j < 9; ++j) {
+
+  for (int i = 0; i < 9; ++i) { // for each house of the houses
+
+    std::vector<std::vector<int>> intersections(3);
+
+    for (int j = 0; j < 9; ++j) { // for each cell in the house
+
+      // place the candidates in the corresponding intersection
       if (j < 3) {
         for (const auto candidate : _candidates[houses[i][j]]) {
-          set[0].push_back(candidate); // first box
+          intersections[0].push_back(candidate); // first box
         }
       } else if (j < 6) {
         for (const auto candidate : _candidates[houses[i][j]]) {
-          set[1].push_back(candidate); // second box
+          intersections[1].push_back(candidate); // second box
         }
       } else {
         for (const auto candidate : _candidates[houses[i][j]]) {
-          set[2].push_back(candidate); // third box
+          intersections[2].push_back(candidate); // third box
         }
       }
     }
-    // find candidates that are in one box but not the others
-    std::map<int, int> frequency;
-    for (const auto &list : set) {
-      for (const auto val : list) {
-        frequency[val]++;
+
+    // find the claimed candidates
+
+    // count the candidate frequency
+    std::vector<int> frequency(10);
+    for (const auto &intersection : intersections) {
+      for (const auto candidate : intersection) {
+        ++frequency[candidate];
       }
     }
 
-    std::vector<std::vector<int>> unique_candidates(3);
+    // if house frequency == intersection frequency, the candidate is claimed
+    std::vector<std::vector<int>> claimed_candidates(3);
     for (int k = 0; k < 3; ++k) {
-      std::unordered_set<int> unique;
-      for (auto val : set[k]) {
-        if (frequency[val] == std::count(set[k].begin(), set[k].end(), val)) {
-          unique.insert(val);
+      std::bitset<10> claimed{};
+      for (auto candidate : intersections[k]) {
+        if (frequency[candidate] == std::count(intersections[k].begin(),
+                                               intersections[k].end(),
+                                               candidate)) {
+          claimed.set(candidate);
         }
       }
-      unique_candidates[k].assign(unique.begin(), unique.end());
+      for (int l = 0; l < 10; ++l) {
+        if (claimed[l]) {
+          claimed_candidates[k].push_back(l);
+        }
+      }
     }
 
-    // remove duplicates from lists
-    for (auto &list : unique_candidates) {
-      std::sort(list.begin(), list.end());
-      list.erase(std::unique(list.begin(), list.end()), list.end());
-    }
+    // remove the candidate from cells in the box outside the intersection
 
-    // if all instances of a candidate in a row are confined to a given block,
-    // then that candidate may be removed from all other cells in that block
-    for (int k = 0; k < 3; ++k) {
-      if (!unique_candidates[k].empty()) {
-        for (const auto val : unique_candidates[k]) {
+    for (int k = 0; k < 3; ++k) {           // for each intersection
+      if (!claimed_candidates[k].empty()) { // if there are claimed candidates
+                                            // for each claimed candidate
+        for (const auto claimed : claimed_candidates[k]) {
           std::function<int()> choose_box;
           if (tag == house::row) {
             choose_box = [&i, &k]() {
@@ -651,19 +666,23 @@ inline bool Sudoku::prune_claiming_locked_candidates(const house tag) {
               }
             };
           }
-          for (const auto index : indices::boxes[choose_box()]) {
-            if (std::find(houses[i].begin(), houses[i].end(), index) ==
+          // for each cell in the box
+          for (const auto cell : indices::boxes[choose_box()]) {
+            // if the cell is outside the intersection
+            if (std::find(houses[i].begin(), houses[i].end(), cell) ==
                 houses[i].end()) {
-              if (std::find(_candidates[index].begin(),
-                            _candidates[index].end(),
-                            val) != _candidates[index].end()) {
+              // and contains a claimed candidate
+              // remove the claimed candidate from that cell
+              if (std::find(_candidates[cell].begin(), _candidates[cell].end(),
+                            claimed) != _candidates[cell].end()) {
                 got_one = true;
-                std::cout << "claiming locked candidate: " << std::setw(2)
-                          << index << " " << val << '\n';
-                _candidates[index].erase(std::remove(_candidates[index].begin(),
-                                                     _candidates[index].end(),
-                                                     val),
-                                         _candidates[index].end());
+                std::cout << "eliminate candidate by locked claiming : "
+                          << std::setw(2) << cell << " " << claimed << '\n';
+                ++_candidates_pruned_by._claiming_locked;
+                _candidates[cell].erase(std::remove(_candidates[cell].begin(),
+                                                    _candidates[cell].end(),
+                                                    claimed),
+                                        _candidates[cell].end());
               }
             }
           }
@@ -954,9 +973,12 @@ inline void Sudoku::print_singles() const {
 
 inline void Sudoku::print_readout() const {
   std::cout << "\n\nApplied\n\t";
-  std::cout << "Naked Singles  : " << std::setw(5) << _naked_singles << "\n\t";
-  std::cout << "Hidden Singles : " << std::setw(5) << _hidden_singles << "\n\t";
-  // std::cout << "\nCandidates eliminated by: " <<
+  std::cout << "Naked Singles   : " << std::setw(5) << _naked_singles << "\n\t";
+  std::cout << "Hidden Singles  : " << std::setw(5) << _hidden_singles
+            << "\n\t";
+  std::cout << "\nCandidates eliminated by:\n\t";
+  std::cout << "Locked claiming : " << std::setw(5)
+            << _candidates_pruned_by._claiming_locked << "\n";
 }
 
 #endif // SUDOKU_HPP_

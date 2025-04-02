@@ -256,12 +256,12 @@ inline void Sudoku::solve() {
       continue;
     }
 
-    if (prune_claiming_locked_candidates()) {
+    if (prune_pointing_locked_candidates()) {
       progress = true;
       continue;
     }
 
-    if (prune_pointing_locked_candidates()) {
+    if (prune_claiming_locked_candidates()) {
       progress = true;
       continue;
     }
@@ -615,7 +615,7 @@ inline bool Sudoku::prune_claiming_locked_candidates(const house tag) {
       }
     }
 
-    // if house frequency == intersection frequency, the candidate is claimed
+    // if row/colum frequency == intersection frequency, candidate is claimed
     std::vector<std::vector<int>> claimed_candidates(3);
     for (int k = 0; k < 3; ++k) {
       std::bitset<10> claimed{};
@@ -633,7 +633,8 @@ inline bool Sudoku::prune_claiming_locked_candidates(const house tag) {
       }
     }
 
-    // remove the candidate from cells in the box outside the intersection
+    // remove the claimed candidate from cells in the box outside the
+    // intersection
 
     for (int k = 0; k < 3; ++k) {           // for each intersection
       if (!claimed_candidates[k].empty()) { // if there are claimed candidates
@@ -695,48 +696,62 @@ inline bool Sudoku::prune_claiming_locked_candidates(const house tag) {
 
 inline bool Sudoku::prune_pointing_locked_candidates() {
   bool got_one = false;
-  for (int i = 0; i < 9; ++i) {   // intersections
-    for (int j = 0; j < 2; ++j) { // 0: rows, 1: columns
-      std::vector<std::vector<int>> set(3);
-      for (int k = 0; k < 3; ++k) {   // the indices of the intersection
-        for (int l = 0; l < 3; ++l) { // index
+  for (int i = 0; i < 9; ++i) {   // for each box
+    for (int j = 0; j < 2; ++j) { // for both rows (0) and columns (1)
+
+      std::vector<std::vector<int>> intersections(3);
+
+      // place candidates in the corresponding intersection
+
+      // for each of the intersections (rows or columns)
+      for (int k = 0; k < 3; ++k) {
+        for (int l = 0; l < 3; ++l) { // for each cell in that intersection
           for (const auto candidate :
                _candidates[indices::subranges[i][j][k]->at(l)]) {
-            set[k].push_back(candidate);
+            intersections[k].push_back(candidate);
           }
         }
       }
-      // find values that are in one subset but not the others
-      std::map<int, int> frequency;
-      for (const auto &list : set) {
-        for (const auto value : list) {
-          frequency[value]++;
+
+      // find the pointing candidates
+
+      // count the candidate frequency
+      std::vector<int> frequency(10);
+      for (const auto &intersection : intersections) {
+        for (const auto candidate : intersection) {
+          ++frequency[candidate];
         }
       }
 
-      std::vector<std::vector<int>> unique_candidates(3);
+      // if box frequency == intersection frequency, candidate is pointing
+      std::vector<std::vector<int>> pointing_candidates(3);
       for (int k = 0; k < 3; ++k) {
-        std::unordered_set<int> unique;
-        for (auto val : set[k]) {
-          if (frequency[val] == std::count(set[k].begin(), set[k].end(), val)) {
-            unique.insert(val);
+        std::bitset<10> pointing{};
+        for (auto candidate : intersections[k]) {
+          if (frequency[candidate] == std::count(intersections[k].begin(),
+                                                 intersections[k].end(),
+                                                 candidate)) {
+            pointing.set(candidate);
           }
         }
-        unique_candidates[k].assign(unique.begin(), unique.end());
+        for (int l = 0; l < 10; ++l) {
+          if (pointing[l]) {
+            pointing_candidates[k].push_back(l);
+          }
+        }
       }
 
-      // remove duplicate values
-      for (auto &list : unique_candidates) {
-        std::sort(list.begin(), list.end());
-        list.erase(std::unique(list.begin(), list.end()), list.end());
-      }
+      // remove the pointing candidates from the row/column outside the box
+
       // i : box
       // j : 0 -> rows, 1 -> columns
-      // k : first, second, third row/column in the given box
-      // l : first, second, third index of the given row/column
-      for (int k = 0; k < 3; ++k) {
-        if (!unique_candidates[k].empty()) {
-          for (const auto val : unique_candidates[k]) {
+      // k : first, second, third row/column intersecting the given box
+      // l : first, second, third cell of the intersecting row/column
+      for (int k = 0; k < 3; ++k) { // for each intersection
+                                    // if there are pointing candidates
+        if (!pointing_candidates[k].empty()) {
+          // for each pointing candidate
+          for (const auto candidate : pointing_candidates[k]) {
             if (j == 0) { // rows
               auto choose_row = [&i, &k]() {
                 if (i < 3) {
@@ -749,17 +764,22 @@ inline bool Sudoku::prune_pointing_locked_candidates() {
                   return 6 + k;
                 }
               };
-              for (const auto index : indices::rows[choose_row()]) {
+              // for each cell in the row
+              for (const auto cell : indices::rows[choose_row()]) {
+                // if the cell is not in the box
                 if (std::find(indices::subranges[i][j][k]->begin(),
                               indices::subranges[i][j][k]->end(),
-                              index) == indices::subranges[i][j][k]->end()) {
-                  for (auto it = _candidates[index].begin();
-                       it != _candidates[index].end();) {
-                    if (*it == val) {
-                      std::cout << "pointing locked candidate: " << std::setw(2)
-                                << index << " " << val << '\n';
+                              cell) == indices::subranges[i][j][k]->end()) {
+                  // eliminate instances of the pointing candidate in that cell
+                  for (auto it = _candidates[cell].begin();
+                       it != _candidates[cell].end();) {
+                    if (*it == candidate) {
+                      std::cout << "eliminate candidate by locked pointing : "
+                                << std::setw(2) << cell << " " << candidate
+                                << '\n';
+                      ++_candidates_pruned_by._pointing_locked;
                       got_one = true;
-                      it = _candidates[index].erase(it);
+                      it = _candidates[cell].erase(it);
                     } else {
                       ++it;
                     }
@@ -778,17 +798,22 @@ inline bool Sudoku::prune_pointing_locked_candidates() {
                   return 6 + k;
                 }
               };
-              for (const auto index : indices::columns[choose_column()]) {
+              // for each cell in the row
+              for (const auto cell : indices::columns[choose_column()]) {
+                // if the cell is not in the box
                 if (std::find(indices::subranges[i][j][k]->begin(),
                               indices::subranges[i][j][k]->end(),
-                              index) == indices::subranges[i][j][k]->end()) {
-                  for (auto it = _candidates[index].begin();
-                       it != _candidates[index].end();) {
-                    if (*it == val) {
-                      std::cout << "pointing locked candidate: " << std::setw(2)
-                                << index << " " << val << '\n';
+                              cell) == indices::subranges[i][j][k]->end()) {
+                  // eliminate instances of the pointing candidate in that cell
+                  for (auto it = _candidates[cell].begin();
+                       it != _candidates[cell].end();) {
+                    if (*it == candidate) {
+                      std::cout << "eliminate candidate by locked pointing : "
+                                << std::setw(2) << cell << " " << candidate
+                                << '\n';
+                      ++_candidates_pruned_by._pointing_locked;
                       got_one = true;
-                      it = _candidates[index].erase(it);
+                      it = _candidates[cell].erase(it);
                     } else {
                       ++it;
                     }
@@ -978,7 +1003,9 @@ inline void Sudoku::print_readout() const {
             << "\n\t";
   std::cout << "\nCandidates eliminated by:\n\t";
   std::cout << "Locked claiming : " << std::setw(5)
-            << _candidates_pruned_by._claiming_locked << "\n";
+            << _candidates_pruned_by._claiming_locked << "\n\t";
+  std::cout << "Locked pointing : " << std::setw(5)
+            << _candidates_pruned_by._pointing_locked << "\n\t";
 }
 
 #endif // SUDOKU_HPP_

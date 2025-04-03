@@ -22,11 +22,11 @@ void Sudoku::solve() {
       continue;
     }
 
-    if (prune_claiming_locked_candidates()) {
+    if (prune_locked_claiming_candidates()) {
       progress = true;
     }
 
-    if (prune_pointing_locked_candidates()) {
+    if (prune_locked_pointing_candidates()) {
       progress = true;
       continue;
     }

@@ -1,8 +1,8 @@
 #include "Sudoku.hpp"
 
-bool Sudoku::prune_claiming_locked_candidates() {
-  const bool row = prune_claiming_locked_candidates(house::row);
-  const bool column = prune_claiming_locked_candidates(house::column);
+bool Sudoku::prune_locked_claiming_candidates() {
+  const bool row = prune_locked_claiming_candidates(house::row);
+  const bool column = prune_locked_claiming_candidates(house::column);
   return row || column;
 }
 
@@ -11,7 +11,7 @@ bool Sudoku::prune_claiming_locked_candidates() {
 // If in a row (or column) all candidates of a certain digit are confined to
 // one block, that candidate that be eliminated from all other cells in that
 // block.
-bool Sudoku::prune_claiming_locked_candidates(const house tag) {
+bool Sudoku::prune_locked_claiming_candidates(const house tag) {
   bool got_one = false;
   const auto &houses = tag == house::row ? indices::rows : indices::columns;
 

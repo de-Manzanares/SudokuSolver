@@ -40,6 +40,7 @@ target_sources(
         src/print.cpp
         src/solve.cpp
         src/singles.cpp
+        src/locked_claiming.cpp
 )
 target_include_directories(
         sudoku_solver

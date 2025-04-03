@@ -42,6 +42,7 @@ target_sources(
         src/singles.cpp
         src/locked_claiming.cpp
         src/locked_pointing.cpp
+        src/subsets_hidden.cpp
 )
 target_include_directories(
         sudoku_solver

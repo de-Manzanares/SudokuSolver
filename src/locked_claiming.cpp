@@ -1,4 +1,5 @@
 #include "Sudoku.hpp"
+#include <functional>
 
 bool Sudoku::prune_locked_claiming_candidates() {
   const bool row = prune_locked_claiming_candidates(house::row);

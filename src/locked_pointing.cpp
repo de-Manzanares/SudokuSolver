@@ -1,5 +1,12 @@
 #include "Sudoku.hpp"
 
+// pointing locked candidates
+// https://hodoku.sourceforge.net/en/tech_intersections.php
+// If in a block all candidates of a certain digit are confined to a row or
+// column, that digit cannot appear outside of that block in that row or
+// column.
+// identify if a candidate only appears in one row or column of a box
+
 bool Sudoku::prune_locked_pointing_candidates() {
   bool got_one = false;
   for (int i = 0; i < 9; ++i) {   // for each box

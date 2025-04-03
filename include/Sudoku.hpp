@@ -28,8 +28,7 @@ class Sudoku {
 
   void solve();
 
-  bool prune_hidden_subsets();
-  bool prune_hidden_subsets(house tag);
+  bool prune_hidden_subsets(int n);
   bool prune_locked_claiming_candidates();
   bool prune_locked_pointing_candidates();
 
@@ -59,6 +58,7 @@ class Sudoku {
   struct _candidates_pruned_by {
     int _claiming_locked{};
     int _pointing_locked{};
+    int _subset_hidden{};
   };
 
   _candidates_pruned_by _candidates_pruned_by{};

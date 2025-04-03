@@ -1,8 +1,8 @@
 #include "Sudoku.hpp"
 
 #define EASY_
-#define MEDM_Y
-#define HARD_
+#define MEDM_
+#define HARD_Y
 #define MAST_
 
 int main() {

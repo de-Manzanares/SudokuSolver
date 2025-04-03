@@ -77,4 +77,6 @@ void Sudoku::print_readout() const {
             << _candidates_pruned_by._claiming_locked << "\n\t";
   std::cout << "Locked pointing : " << std::setw(5)
             << _candidates_pruned_by._pointing_locked << "\n\t";
+  std::cout << "Hidden subsets  : " << std::setw(5)
+            << _candidates_pruned_by._subset_hidden << "\n\t";
 }

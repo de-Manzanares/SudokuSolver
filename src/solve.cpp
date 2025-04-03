@@ -31,7 +31,15 @@ void Sudoku::solve() {
       continue;
     }
 
-    // if (prune_hidden_subsets()) {
+    if (prune_hidden_subsets(2)) {
+      progress = true;
+    }
+
+    // if (prune_hidden_subsets(3)) {
+    //   progress = true;
+    // }
+
+    // if (prune_hidden_subsets(4)) {
     //   progress = true;
     //   continue;
     // }

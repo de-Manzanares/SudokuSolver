@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <iostream>
 #include <list>
-#include <map>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -23,10 +22,6 @@ class Sudoku {
   explicit Sudoku(const std::vector<int> &puzzle) : _puzzle{puzzle} {};
 
   void check_puzzle() const;
-  [[nodiscard]] bool puzzle_is_valid() const;
-  [[nodiscard]] bool check_houses(house tag) const;
-
-  [[nodiscard]] bool check_validity(int value, int val_index) const;
 
   void find_unknown_indices();
   void find_candidates();
@@ -78,6 +73,10 @@ class Sudoku {
   };
 
   _candidates_pruned_by _candidates_pruned_by{};
+
+  // check
+  [[nodiscard]] bool puzzle_is_valid() const;
+  [[nodiscard]] bool check_houses(house tag) const;
 };
 
 inline void Sudoku::solve() {
@@ -119,111 +118,7 @@ inline void Sudoku::solve() {
     //   continue;
     // }
   }
-
-  // while (_sc) {
-  //   _sc = false;
-  //   _puzzles.push_back(_puzzle);
-
-  //   if (_unknown.none()) {
-  //     break; // exit if the puzzle is solved
-  //   }
-
-  //   print_unknown();
-  //   print_candidates("Candidates:\n", _candidates);
-
-  //   prune_hidden_subsets(house::row);
-  //   prune_hidden_subsets(house::column);
-  //   prune_hidden_subsets(house::box);
-
-  //   prune_claiming_locked_candidates(house::row);
-  //   prune_claiming_locked_candidates(house::column);
-
-  //   prune_pointing_locked_candidates();
-
-  //   print_candidates("Pruned Candidates:\n", _candidates);
-
-  //   solve_explicit_singles();
-
-  //   reset_singles();
-  //   find_implicit_singles(house::row);
-  //   find_implicit_singles(house::column);
-  //   find_implicit_singles(house::box);
-  //   print_singles();
-
-  //   solve_implicit_singles();
-
-  //   print_puzzle();
-  //   ++_iterations;
-  //   check_puzzle();
-  // }
 }
-
-// begin checking validity -----------------------------------------------------
-
-inline void Sudoku::check_puzzle() const {
-  try {
-    if (_puzzle.size() != PUZZLE_SIZE || !puzzle_is_valid()) {
-      throw std::runtime_error("puzzle is malformed");
-    }
-  } catch (const std::exception &e) {
-    std::cerr << e.what() << '\n';
-    std::exit(EXIT_FAILURE);
-  }
-}
-
-inline bool Sudoku::puzzle_is_valid() const {
-  return check_houses(house::row) && check_houses(house::column) &&
-         check_houses(house::box);
-}
-
-inline bool Sudoku::check_houses(const house tag) const {
-  auto &houses = tag == house::row      ? indices::rows
-                 : tag == house::column ? indices::columns
-                                        : indices::boxes;
-  for (const auto &house : houses) {
-    std::bitset<10> seen;
-    for (const auto index : house) {
-      if (_puzzle[index] != 0) {
-        if (seen[_puzzle[index]]) {
-          return false;
-        }
-        seen.set(_puzzle[index]);
-      }
-    }
-  }
-  return true;
-}
-
-/**
- * @brief Is this value valid at this index?
- * @details Used to create a list of candidate values for each empty square.
- * Check the row, column, and box of the given index for the given value.
- * @param value a candidate value
- * @param val_index the cell in which it might be placed
- * @return True - the candidate value is valid
- * False - the candidate value is invalid
- */
-inline bool Sudoku::check_validity(const int value, const int val_index) const {
-  for (int i = 0; i < 3; ++i) {
-    std::bitset<10> seen;
-    seen.set(value);
-    for (const auto index :
-         i == 2   ? indices::boxes[indices::associations[val_index][i]]
-         : i == 1 ? indices::columns[indices::associations[val_index][i]]
-                  : indices::rows[indices::associations[val_index][i]]) {
-      if (_puzzle[index] != 0) {
-        if (seen[_puzzle[index]]) {
-          return false;
-        }
-        seen.set(_puzzle[index]);
-      }
-    }
-  }
-  return true;
-}
-
-// end checking validity -------------------------------------------------------
-
 // begin - create candidates ---------------------------------------------------
 
 inline void Sudoku::find_unknown_indices() {

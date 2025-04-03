@@ -35,6 +35,7 @@ target_sources(
         sudoku_solver
         PRIVATE
         src/main.cpp
+        src/check.cpp
 )
 target_include_directories(
         sudoku_solver

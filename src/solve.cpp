@@ -8,15 +8,14 @@ void Sudoku::solve() {
   while (progress) {
     progress = false;
 
-    if (solve_explicit_singles()) {
+    if (solve_naked_singles()) {
       std::cout << '\n';
       print_puzzle();
       progress = true;
       continue;
     }
 
-    if (find_implicit_singles()) {
-      solve_implicit_singles();
+    if (solve_hidden_singles()) {
       std::cout << '\n';
       print_puzzle();
       progress = true;

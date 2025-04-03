@@ -9,7 +9,6 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
-#include <list>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -21,8 +20,10 @@ class Sudoku {
 
   explicit Sudoku(const std::vector<int> &puzzle) : _puzzle{puzzle} {};
 
+  // check
   void check_puzzle() const;
 
+  // initialize candidatess
   void initialize_candidates();
 
   bool prune_hidden_subsets();
@@ -32,13 +33,9 @@ class Sudoku {
   bool prune_claiming_locked_candidates(house tag);
   bool prune_pointing_locked_candidates();
 
-  void reset_singles();
-  bool find_implicit_singles();
-  bool find_implicit_singles(house tag);
-  bool solve_explicit_singles();
-  void solve_implicit_singles();
-
-  void update_candidates(int cell);
+  // singles
+  bool solve_naked_singles();
+  bool solve_hidden_singles();
 
   void solve();
 
@@ -80,6 +77,11 @@ class Sudoku {
   // initialize candidates
   void find_unknown_indices();
   void initialize_candidates(int cell);
+
+  // singles
+  bool find_hidden_singles();
+  bool find_hidden_singles(house tag);
+  void update_candidates(int cell);
 };
 
 // begin - prune candidates ----------------------------------------------------
@@ -494,100 +496,4 @@ inline bool Sudoku::prune_pointing_locked_candidates() {
 }
 
 // end - prune candidates ------------------------------------------------------
-
-inline void Sudoku::reset_singles() {
-  std::cout << "Finding hidden singles ...\n\n";
-  _singles.fill(0);
-}
-
-inline bool Sudoku::find_implicit_singles() {
-  const bool row = find_implicit_singles(house::row);
-  const bool column = find_implicit_singles(house::column);
-  const bool box = find_implicit_singles(house::box);
-  return row || column || box;
-}
-
-inline bool Sudoku::find_implicit_singles(const house tag) {
-  bool got_one = false;
-  const auto &houses = tag == house::row      ? indices::rows
-                       : tag == house::column ? indices::columns
-                                              : indices::boxes;
-  const auto label = tag == house::row      ? "row"
-                     : tag == house::column ? "col"
-                                            : "box";
-  for (int i = 0; i < houses.size(); ++i) {
-    std::vector<int> candidate_occurrences(10);
-    for (const auto index : houses[i]) {
-      for (const auto candidate : _candidates[index]) {
-        candidate_occurrences[candidate]++;
-      }
-    }
-    for (int j = 1; j < 10; ++j) {
-      if (candidate_occurrences[j] == 1) {
-        for (const auto index : houses[i]) {
-          for (const auto candidate : _candidates[index]) {
-            if (candidate == j) {
-              _singles[index] = j;
-              got_one = true;
-            }
-          }
-        }
-      }
-    }
-    // std::cout << label << i << " occurrences: ";
-    // for (const int j : candidate_occurrences) {
-    //   std::cout << ' ' << j << ' ';
-    // }
-    // std::cout << '\n';
-  }
-  // std::cout << '\n';
-  return got_one;
-}
-
-inline void Sudoku::update_candidates(const int cell) {
-  const int val = _puzzle[cell];
-  for (int i = 0; i < 3; ++i) {
-    for (const auto index :
-         i == 2   ? indices::boxes[indices::associations[cell][i]]
-         : i == 1 ? indices::columns[indices::associations[cell][i]]
-                  : indices::rows[indices::associations[cell][i]]) {
-      _candidates[index].erase(std::remove(_candidates[index].begin(),
-                                           _candidates[index].end(), val),
-                               _candidates[index].end());
-    }
-  }
-}
-
-inline bool Sudoku::solve_explicit_singles() {
-  bool got_one = false;
-  for (int i = 0; i < PUZZLE_SIZE; ++i) {
-    if (_candidates[i].size() == 1) {
-      got_one = true;
-      ++_naked_singles;
-      _puzzle[i] = _candidates[i][0];
-      _unknown.reset(i);
-      update_candidates(i);
-      std::cout << "naked single : " << std::setw(2) << i << " " << _puzzle[i]
-                << '\n';
-    }
-  }
-  return got_one;
-}
-
-inline void Sudoku::solve_implicit_singles() {
-  for (int i = 0; i < PUZZLE_SIZE; ++i) {
-    if (_singles[i] != 0) {
-      ++_hidden_singles;
-      _puzzle[i] = _singles[i];
-      _singles[i] = 0;
-      update_candidates(i);
-      _candidates[i].clear();
-      _unknown.reset(i);
-      _sc = true;
-      std::cout << "hidden single : " << std::setw(2) << i << " " << _puzzle[i]
-                << '\n';
-    }
-  }
-}
-
 #endif // SUDOKU_HPP_

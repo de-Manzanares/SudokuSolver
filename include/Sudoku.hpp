@@ -23,9 +23,8 @@ class Sudoku {
 
   void check_puzzle() const;
 
-  void find_unknown_indices();
-  void find_candidates();
-  void find_candidates(int cell);
+  void initialize_candidates();
+
   bool prune_hidden_subsets();
 
   bool prune_hidden_subsets(house tag);
@@ -77,11 +76,14 @@ class Sudoku {
   // check
   [[nodiscard]] bool puzzle_is_valid() const;
   [[nodiscard]] bool check_houses(house tag) const;
+
+  // initialize candidates
+  void find_unknown_indices();
+  void initialize_candidates(int cell);
 };
 
 inline void Sudoku::solve() {
-  find_unknown_indices();
-  find_candidates();
+  initialize_candidates();
   print_candidates("Candidates:\n", _candidates);
 
   bool progress = true;
@@ -119,47 +121,6 @@ inline void Sudoku::solve() {
     // }
   }
 }
-// begin - create candidates ---------------------------------------------------
-
-inline void Sudoku::find_unknown_indices() {
-  _unknown.reset();
-  for (int i = 0; i < PUZZLE_SIZE; ++i) {
-    if (_puzzle[i] == UNKNOWN) {
-      _unknown.set(i);
-    }
-  }
-}
-
-inline void Sudoku::find_candidates() {
-  _candidates.clear();
-  _candidates.resize(PUZZLE_SIZE);
-  for (int i = 0; i < PUZZLE_SIZE; ++i) {
-    if (_unknown[i]) {
-      find_candidates(i);
-    }
-  }
-}
-
-inline void Sudoku::find_candidates(const int cell) {
-  // count every occurrence of a value for that cell's houses
-  // the candidates are the complement of that set
-  std::bitset<10> seen;
-  for (int i = 0; i < 3; ++i) {
-    for (const auto index :
-         i == 2   ? indices::boxes[indices::associations[cell][i]]
-         : i == 1 ? indices::columns[indices::associations[cell][i]]
-                  : indices::rows[indices::associations[cell][i]]) {
-      seen.set(_puzzle[index]);
-    }
-  }
-  for (int i = 1; i < 10; ++i) {
-    if (!seen[i]) {
-      _candidates[cell].push_back(i);
-    }
-  }
-}
-
-// end - create candidates -----------------------------------------------------
 
 // begin - prune candidates ----------------------------------------------------
 

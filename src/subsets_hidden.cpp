@@ -24,7 +24,7 @@ bool Sudoku::prune_hidden_subsets(const int n) {
           }
         }
       }
-      // now we can search for the pairs/triples/quads in the row
+      // now we can search for the pairs/triples/quads in the house
       std::unordered_map<int, std::vector<int>> val_to_cells;
       for (const auto &[val, cells] : candidates_to_cells) {
         if ((n == 2 && cells.size() == 2) ||
@@ -61,9 +61,9 @@ bool Sudoku::prune_hidden_subsets(const int n) {
                   << std::setw(2) << cell << ", ";
               for (auto itt = it; itt != _candidates[cell].end(); ++itt) {
                 std::cout << std::setw(2) << *itt << ' ';
+                ++_candidates_pruned_by._subset_hidden;
               }
               std::cout << '\n';
-              ++_candidates_pruned_by._subset_hidden;
 
               _candidates[cell].erase(it, _candidates[cell].end());
             }

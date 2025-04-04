@@ -1,8 +1,11 @@
 #include "Sudoku.hpp"
+#include <chrono>
 
 void Sudoku::solve() {
   initialize_candidates();
   print_candidates("Candidates:\n", _candidates);
+
+  auto start = std::chrono::high_resolution_clock::now();
 
   bool progress = true;
   while (progress) {
@@ -35,13 +38,30 @@ void Sudoku::solve() {
       progress = true;
     }
 
-    // if (prune_hidden_subsets(3)) {
-    //   progress = true;
-    // }
+    if (prune_hidden_subsets(3)) {
+      progress = true;
+    }
 
-    // if (prune_hidden_subsets(4)) {
-    //   progress = true;
-    //   continue;
-    // }
+    if (prune_hidden_subsets(4)) {
+      progress = true;
+    }
+
+    if (prune_naked_subsets(2)) {
+      progress = true;
+    }
+
+    if (prune_naked_subsets(3)) {
+      progress = true;
+    }
+
+    if (prune_naked_subsets(4)) {
+      progress = true;
+    }
   }
+  const auto end = std::chrono::high_resolution_clock::now();
+
+  const auto elapsed =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+  std::cout << "\nElapsed time: " << elapsed.count() << " microseconds";
 }

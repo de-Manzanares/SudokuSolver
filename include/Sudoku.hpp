@@ -28,6 +28,7 @@ class Sudoku {
 
   void solve();
 
+  bool prune_naked_subsets(int n);
   bool prune_hidden_subsets(int n);
   bool prune_locked_claiming_candidates();
   bool prune_locked_pointing_candidates();
@@ -59,6 +60,7 @@ class Sudoku {
     int _claiming_locked{};
     int _pointing_locked{};
     int _subset_hidden{};
+    int _subset_naked{};
   };
 
   _candidates_pruned_by _candidates_pruned_by{};

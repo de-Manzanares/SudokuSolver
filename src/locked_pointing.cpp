@@ -88,9 +88,9 @@ bool Sudoku::prune_locked_pointing_candidates() {
                   for (auto it = _candidates[cell].begin();
                        it != _candidates[cell].end();) {
                     if (*it == candidate) {
-                      std::cout << "eliminate candidate by locked pointing : "
-                                << std::setw(2) << cell << " " << candidate
-                                << '\n';
+                      // std::cout << "eliminate candidate by locked pointing : "
+                      //           << std::setw(2) << cell << " " << candidate
+                      //           << '\n';
                       ++_candidates_pruned_by._pointing_locked;
                       got_one = true;
                       it = _candidates[cell].erase(it);
@@ -123,9 +123,9 @@ bool Sudoku::prune_locked_pointing_candidates() {
                   for (auto it = _candidates[cell].begin();
                        it != _candidates[cell].end();) {
                     if (*it == candidate) {
-                      std::cout << "eliminate candidate by locked pointing : "
-                                << std::setw(2) << cell << " " << candidate
-                                << '\n';
+                      // std::cout << "eliminate candidate by locked pointing : "
+                      //           << std::setw(2) << cell << " " << candidate
+                      //           << '\n';
                       ++_candidates_pruned_by._pointing_locked;
                       got_one = true;
                       it = _candidates[cell].erase(it);

@@ -9,8 +9,9 @@ bool Sudoku::solve_naked_singles() {
       _puzzle[i] = _candidates[i][0];
       _unknown.reset(i);
       update_candidates(i);
-      std::cout << "naked single : " << std::setw(2) << i << " " << _puzzle[i]
-                << '\n';
+      // std::cout << "naked single : " << std::setw(2) << i << " " <<
+      // _puzzle[i]
+      //           << '\n';
     }
   }
   return got_one;
@@ -26,8 +27,8 @@ bool Sudoku::solve_hidden_singles() {
         _singles[i] = 0;
         _unknown.reset(i);
         update_candidates(i);
-        std::cout << "hidden single : " << std::setw(2) << i << " "
-                  << _puzzle[i] << '\n';
+        // std::cout << "hidden single : " << std::setw(2) << i << " "
+        //           << _puzzle[i] << '\n';
       }
     }
   }

@@ -3,7 +3,7 @@
 
 bool Sudoku::solve() {
   initialize_candidates();
-  print_candidates("Candidates:\n", _candidates);
+  // print_candidates("Candidates:\n", _candidates);
 
   const auto start = std::chrono::high_resolution_clock::now();
 
@@ -12,15 +12,15 @@ bool Sudoku::solve() {
     progress = false;
 
     if (solve_naked_singles()) {
-      std::cout << '\n';
-      print_puzzle();
+      // std::cout << '\n';
+      // print_puzzle();
       progress = true;
       continue;
     }
 
     if (solve_hidden_singles()) {
-      std::cout << '\n';
-      print_puzzle();
+      // std::cout << '\n';
+      // print_puzzle();
       progress = true;
       continue;
     }
@@ -63,8 +63,8 @@ bool Sudoku::solve() {
   const auto elapsed =
       std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-  std::cout << "\nElapsed time: " << elapsed.count() << " microseconds";
-  print_readout();
+  // std::cout << "\nElapsed time: " << elapsed.count() << " microseconds";
+  // print_readout();
 
   return _unknown.none();
 }

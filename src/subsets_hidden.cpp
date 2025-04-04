@@ -56,14 +56,14 @@ bool Sudoku::prune_hidden_subsets(const std::size_t n) {
             if (it != _candidates[cell].end()) {
               got_one = true;
 
-              std::cout
-                  << "eliminate candidate by hidden subset (cell, vals) : "
-                  << std::setw(2) << cell << ", ";
-              for (auto itt = it; itt != _candidates[cell].end(); ++itt) {
-                std::cout << std::setw(2) << *itt << ' ';
-                ++_candidates_pruned_by._subset_hidden;
-              }
-              std::cout << '\n';
+              // std::cout
+              //     << "eliminate candidate by hidden subset (cell, vals) : "
+              //     << std::setw(2) << cell << ", ";
+              // for (auto itt = it; itt != _candidates[cell].end(); ++itt) {
+              //   std::cout << std::setw(2) << *itt << ' ';
+              //   ++_candidates_pruned_by._subset_hidden;
+              // }
+              // std::cout << '\n';
 
               _candidates[cell].erase(it, _candidates[cell].end());
             }

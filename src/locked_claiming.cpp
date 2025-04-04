@@ -112,8 +112,8 @@ bool Sudoku::prune_locked_claiming_candidates(const house tag) {
               if (std::find(_candidates[cell].begin(), _candidates[cell].end(),
                             claimed) != _candidates[cell].end()) {
                 got_one = true;
-                std::cout << "eliminate candidate by locked claiming : "
-                          << std::setw(2) << cell << " " << claimed << '\n';
+                // std::cout << "eliminate candidate by locked claiming : "
+                //           << std::setw(2) << cell << " " << claimed << '\n';
                 ++_candidates_pruned_by._claiming_locked;
                 _candidates[cell].erase(std::remove(_candidates[cell].begin(),
                                                     _candidates[cell].end(),

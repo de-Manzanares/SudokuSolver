@@ -1,11 +1,11 @@
 #include "Sudoku.hpp"
 #include <chrono>
 
-void Sudoku::solve() {
+bool Sudoku::solve() {
   initialize_candidates();
   print_candidates("Candidates:\n", _candidates);
 
-  auto start = std::chrono::high_resolution_clock::now();
+  const auto start = std::chrono::high_resolution_clock::now();
 
   bool progress = true;
   while (progress) {
@@ -64,4 +64,7 @@ void Sudoku::solve() {
       std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
   std::cout << "\nElapsed time: " << elapsed.count() << " microseconds";
+  print_readout();
+
+  return _unknown.none();
 }

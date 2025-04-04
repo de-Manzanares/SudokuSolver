@@ -4,7 +4,7 @@ project(sudoku_solver)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CompilerOptions -Wall -Wextra -Wpedantic)
+set(CompilerOptions -Wall -Wextra -Wpedantic -Werror)
 set(DEBUGCompilerOptions -g ${CompilerOptions})
 set(COVCompilerOptions --coverage ${CompilerOptions})
 set(COVLinkerOptions --coverage)
@@ -30,11 +30,10 @@ target_link_options(
         $<$<CONFIG:Sanitizer>:$<$<CXX_COMPILER_ID:GNU,Clang>:${SANLinkerOptions}>>
 )
 
-add_executable(sudoku_solver)
+add_library(sudoku-solver STATIC)
 target_sources(
-        sudoku_solver
+        sudoku-solver
         PRIVATE
-        src/main.cpp
         src/check.cpp
         src/initialize_candidates.cpp
         src/print.cpp
@@ -46,12 +45,14 @@ target_sources(
         src/subsets_naked.cpp
 )
 target_include_directories(
-        sudoku_solver
+        sudoku-solver
         PRIVATE
         include
 )
 target_link_libraries(
-        sudoku_solver
+        sudoku-solver
         PRIVATE
         common-options
 )
+
+add_subdirectory(test)

@@ -5,9 +5,8 @@
 #include <iostream>
 #include <map>
 #include <set>
-#include <unordered_map>
 
-bool Sudoku::prune_naked_subsets(const int n) {
+bool Sudoku::prune_naked_subsets(const std::size_t n) {
   bool got_one = false;
   const auto house_type =
       std::vector{&indices::rows, &indices::columns, &indices::boxes};
@@ -36,17 +35,18 @@ bool Sudoku::prune_naked_subsets(const int n) {
           ++it;
         }
       }
-      for (const auto &[values, cells] : subsets) {
+      for (const auto &subset : subsets) {
         // for every cell in the house
         for (const auto cell : house) {
           // excluding the cells containing the naked subset
-          if (std::find(cells.begin(), cells.end(), cell) == cells.end()) {
-            auto it =
-                std::remove_if(_candidates[cell].begin(),
-                               _candidates[cell].end(), [&values](auto x) {
-                                 return std::find(values.begin(), values.end(),
-                                                  x) != values.end();
-                               });
+          if (std::find(subset.second.begin(), subset.second.end(), cell) ==
+              subset.second.end()) {
+            auto it = std::remove_if(
+                _candidates[cell].begin(), _candidates[cell].end(),
+                [&subset](auto x) {
+                  return std::find(subset.first.begin(), subset.first.end(),
+                                   x) != subset.first.end();
+                });
             if (it != _candidates[cell].end()) {
               got_one = true;
 

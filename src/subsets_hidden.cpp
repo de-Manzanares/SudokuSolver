@@ -6,7 +6,7 @@
 #include <set>
 #include <unordered_map>
 
-bool Sudoku::prune_hidden_subsets(const int n) {
+bool Sudoku::prune_hidden_subsets(const std::size_t n) {
   bool got_one = false;
   const auto house_type =
       std::vector{&indices::rows, &indices::columns, &indices::boxes};

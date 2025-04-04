@@ -1,7 +1,7 @@
 #include "Sudoku.hpp"
 
 void Sudoku::print_puzzle() const {
-  for (int i = 0; i < _puzzle.size(); ++i) {
+  for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_puzzle[i] != 0) {
       std::cout << ' ' << _puzzle[i] << ' ';
     } else {
@@ -15,7 +15,7 @@ void Sudoku::print_puzzle() const {
 }
 
 void Sudoku::print_puzzle(const std::vector<int> &vec) {
-  for (int i = 0; i < vec.size(); ++i) {
+  for (std::size_t i = 0; i < vec.size(); ++i) {
     if (vec[i] != 0) {
       std::cout << ' ' << vec[i] << ' ';
     } else {
@@ -41,7 +41,7 @@ void Sudoku::print_unknown() const {
 void Sudoku::print_candidates(const std::string &str,
                               const std::vector<std::vector<int>> &vec) {
   std::cout << str;
-  for (int i = 0; i < vec.size(); ++i) {
+  for (std::size_t i = 0; i < vec.size(); ++i) {
     if (!vec[i].empty()) {
       std::cout << "Cell " << i << " : ";
       for (const int j : vec[i]) {
@@ -81,4 +81,5 @@ void Sudoku::print_readout() const {
             << _candidates_pruned_by._subset_hidden << "\n\t";
   std::cout << "Naked subsets   : " << std::setw(5)
             << _candidates_pruned_by._subset_naked << "\n\t";
+  std::cout << std::endl;
 }

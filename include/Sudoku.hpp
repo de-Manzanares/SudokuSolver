@@ -14,7 +14,18 @@ class Sudoku {
  public:
   enum class house { row, column, box };
 
-  explicit Sudoku(const std::vector<int> &puzzle) : _puzzle{puzzle} {};
+  explicit Sudoku(const std::vector<int> &puzzle) : _puzzle{puzzle} {
+    check_puzzle();
+  };
+  explicit Sudoku(const std::string &str) {
+    for (const auto ch : str) {
+      _puzzle.push_back(ch - '0');
+    }
+    while (_puzzle.size() > 81) {
+      _puzzle.pop_back();
+    }
+    check_puzzle();
+  }
 
   // check
   void check_puzzle() const;
@@ -26,10 +37,10 @@ class Sudoku {
   bool solve_naked_singles();
   bool solve_hidden_singles();
 
-  void solve();
+  bool solve();
 
-  bool prune_naked_subsets(int n);
-  bool prune_hidden_subsets(int n);
+  bool prune_naked_subsets(std::size_t n);
+  bool prune_hidden_subsets(std::size_t n);
   bool prune_locked_claiming_candidates();
   bool prune_locked_pointing_candidates();
 

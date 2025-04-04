@@ -25,27 +25,6 @@ bool Sudoku::solve() {
       continue;
     }
 
-    if (prune_locked_claiming_candidates()) {
-      progress = true;
-    }
-
-    if (prune_locked_pointing_candidates()) {
-      progress = true;
-      continue;
-    }
-
-    if (prune_hidden_subsets(2)) {
-      progress = true;
-    }
-
-    if (prune_hidden_subsets(3)) {
-      progress = true;
-    }
-
-    if (prune_hidden_subsets(4)) {
-      progress = true;
-    }
-
     if (prune_naked_subsets(2)) {
       progress = true;
     }
@@ -54,8 +33,32 @@ bool Sudoku::solve() {
       progress = true;
     }
 
+    if (prune_hidden_subsets(2)) {
+      progress = true;
+    }
+
+    if (prune_hidden_subsets(3)) {
+      progress = true;
+      continue;
+    }
+
     if (prune_naked_subsets(4)) {
       progress = true;
+    }
+
+    if (prune_hidden_subsets(4)) {
+      progress = true;
+      continue;
+    }
+
+    if (prune_locked_pointing_candidates()) {
+      progress = true;
+      continue;
+    }
+
+    if (prune_locked_claiming_candidates()) {
+      progress = true;
+      continue;
     }
   }
   const auto end = std::chrono::high_resolution_clock::now();

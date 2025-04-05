@@ -5,7 +5,7 @@ bool Sudoku::solve() {
   initialize_candidates();
   // print_candidates("Candidates:\n", _candidates);
 
-  const auto start = std::chrono::high_resolution_clock::now();
+  // const auto start = std::chrono::high_resolution_clock::now();
 
   bool progress = true;
   while (progress) {
@@ -60,11 +60,15 @@ bool Sudoku::solve() {
       progress = true;
       continue;
     }
-  }
-  const auto end = std::chrono::high_resolution_clock::now();
 
-  const auto elapsed =
-      std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    if (prune_x_wings(2)) {
+      progress = true;
+    }
+  }
+  // const auto end = std::chrono::high_resolution_clock::now();
+
+  // const auto elapsed =
+  //     std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
   // std::cout << "\nElapsed time: " << elapsed.count() << " microseconds";
   // print_readout();

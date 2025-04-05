@@ -45,6 +45,7 @@ class Sudoku {
   bool prune_locked_pointing_candidates();
 
   void print_puzzle() const;
+  bool prune_x_wings(std::size_t n);
   static void print_puzzle(const std::vector<int> &vec);
   void print_unknown() const;
   static void print_candidates(const std::string &str,
@@ -72,6 +73,7 @@ class Sudoku {
     int _pointing_locked{};
     int _subset_hidden{};
     int _subset_naked{};
+    int _xwing{};
   };
 
   _candidates_pruned_by _candidates_pruned_by{};

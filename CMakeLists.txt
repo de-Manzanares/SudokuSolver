@@ -43,6 +43,7 @@ target_sources(
         src/locked_pointing.cpp
         src/subsets_hidden.cpp
         src/subsets_naked.cpp
+        src/x-wing.cpp
 )
 target_include_directories(
         sudoku-solver

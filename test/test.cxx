@@ -34,6 +34,23 @@ TEST_CASE("X-Wing") {
             << 100.0 * double(solved) / double(count) << "%" << std::endl;
 }
 
+TEST_CASE("Swordfish") {
+  int solved{};
+  int count{};
+  std::ifstream iFile("../../test/data/swordfish.txt");
+  std::string puzzle;
+  while (std::getline(iFile, puzzle)) {
+    if (Sudoku s(puzzle); s.solve()) {
+      ++solved;
+    } else {
+      s.print_puzzle();
+    }
+    ++count;
+  }
+  std::cout << "Solved: " << solved << '/' << count << '\t'
+            << 100.0 * double(solved) / double(count) << "%" << std::endl;
+}
+
 TEST_CASE("50k") {
   int solved{};
   int count{};
@@ -47,4 +64,9 @@ TEST_CASE("50k") {
   }
   std::cout << "Solved: " << solved << '/' << count << '\t'
             << 100.0 * double(solved) / double(count) << "%" << std::endl;
+}
+
+TEST_CASE("sizeof") {
+  std::cout << sizeof(int) << std::endl;
+  std::cout << sizeof(std::size_t) << std::endl;
 }

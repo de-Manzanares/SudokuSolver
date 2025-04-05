@@ -63,6 +63,17 @@ bool Sudoku::solve() {
 
     if (prune_x_wings(2)) {
       progress = true;
+      continue;
+    }
+
+    if (prune_x_wings(3)) {
+      progress = true;
+      continue;
+    }
+
+    if (prune_x_wings(4)) {
+      progress = true;
+      continue;
     }
   }
   // const auto end = std::chrono::high_resolution_clock::now();

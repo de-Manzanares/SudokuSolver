@@ -12,69 +12,65 @@ bool Sudoku::solve() {
     progress = false;
 
     if (solve_naked_singles()) {
-      // std::cout << '\n';
-      // print_puzzle();
       progress = true;
       continue;
     }
 
     if (solve_hidden_singles()) {
-      // std::cout << '\n';
-      // print_puzzle();
       progress = true;
       continue;
     }
 
-    if (prune_naked_subsets(2)) {
+    if (prune_naked_pair(2)) {
       progress = true;
     }
 
-    if (prune_naked_subsets(3)) {
+    if (prune_naked_subset(3)) {
       progress = true;
     }
 
-    if (prune_hidden_subsets(2)) {
-      progress = true;
-    }
+     if (prune_hidden_subsets(2)) {
+       progress = true;
+     }
 
-    if (prune_hidden_subsets(3)) {
-      progress = true;
-      continue;
-    }
+     if (prune_hidden_subsets(3)) {
+       progress = true;
+       continue;
+     }
 
-    if (prune_naked_subsets(4)) {
-      progress = true;
-    }
+     if (prune_naked_subset(4)) {
+       progress = true;
+     }
 
-    if (prune_hidden_subsets(4)) {
-      progress = true;
-      continue;
-    }
+     if (prune_hidden_subsets(4)) {
+       progress = true;
+       continue;
+     }
 
-    if (prune_locked_pointing_candidates()) {
-      progress = true;
-      continue;
-    }
+     if (prune_locked_pointing_candidates()) {
+       progress = true;
+       continue;
+     }
 
-    if (prune_locked_claiming_candidates()) {
-      progress = true;
-      continue;
-    }
+     if (prune_locked_claiming_candidates()) {
+       progress = true;
+       continue;
+     }
 
-    if (prune_x_wings(2)) {
-      progress = true;
-      continue;
-    }
+     if (prune_x_wings(2)) {
+       progress = true;
+       continue;
+     }
 
-    if (prune_x_wings(3)) {
-      progress = true;
-      continue;
-    }
+     if (prune_x_wings(3)) {
+       progress = true;
+       continue;
+     }
 
-    if (prune_x_wings(4)) {
-      progress = true;
-      continue;
-    }
+     if (prune_x_wings(4)) {
+       progress = true;
+       continue;
+     }
   }
   // const auto end = std::chrono::high_resolution_clock::now();
 

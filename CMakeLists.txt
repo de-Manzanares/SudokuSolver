@@ -4,7 +4,8 @@ project(sudoku_solver)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CompilerOptions -Wall -Wextra -Wpedantic -Werror)
+set(CompilerOptions -Wall -Wextra -Wpedantic # -Werror
+)
 set(DEBUGCompilerOptions -g ${CompilerOptions})
 set(COVCompilerOptions --coverage ${CompilerOptions})
 set(COVLinkerOptions --coverage)

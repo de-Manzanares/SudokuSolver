@@ -39,7 +39,8 @@ class Sudoku {
 
   bool solve();
 
-  bool prune_naked_subsets(std::size_t n);
+  bool prune_naked_pair(std::size_t n);
+  bool prune_naked_subset(std::size_t n);
   bool prune_hidden_subsets(std::size_t n);
   bool prune_locked_claiming_candidates();
   bool prune_locked_pointing_candidates();

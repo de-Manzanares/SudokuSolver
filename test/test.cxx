@@ -17,6 +17,23 @@ TEST_CASE("master") {
             << 100.0 * double(solved) / double(count) << "%" << std::endl;
 }
 
+TEST_CASE("naked subsets") {
+  int solved{};
+  int count{};
+  std::ifstream iFile("../../test/data/tmp.txt");
+  std::string puzzle;
+  while (std::getline(iFile, puzzle)) {
+    if (Sudoku s(puzzle); s.solve()) {
+      ++solved;
+    } else {
+      s.print_puzzle();
+    }
+    ++count;
+  }
+  std::cout << "Solved: " << solved << '/' << count << '\t'
+            << 100.0 * double(solved) / double(count) << "%" << std::endl;
+}
+
 TEST_CASE("X-Wing") {
   int solved{};
   int count{};

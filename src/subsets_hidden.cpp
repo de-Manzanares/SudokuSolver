@@ -3,10 +3,11 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <set>
 #include <unordered_map>
 
-bool Sudoku::prune_hidden_subsets(const std::size_t n) {
+bool Sudoku::prune_hidden_subsets(const size_t n) {
   bool got_one = false;
   const auto house_type =
       std::vector{&indices::rows, &indices::columns, &indices::boxes};
@@ -33,6 +34,30 @@ bool Sudoku::prune_hidden_subsets(const std::size_t n) {
           val_to_cells[val] = cells;
         }
       }
+
+      std::map<std::vector<int>, std::size_t> cells_frequency;
+      for (const auto &[val, cells] : val_to_cells) {
+        ++cells_frequency[cells];
+      }
+
+      for (auto it = cells_frequency.begin(); it != cells_frequency.end();) {
+        if (it->second != n) {
+          it = cells_frequency.erase(it);
+        } else {
+          ++it;
+        }
+      }
+
+      for (const auto &[fcells, freq] : cells_frequency) {
+        for (auto it = val_to_cells.begin(); it != val_to_cells.end();) {
+          if (fcells != it->second) {
+            it = val_to_cells.erase(it);
+          } else {
+            ++it;
+          }
+        }
+      }
+
       if (val_to_cells.size() == n) {
         // calculate the union of the cells
         std::set<int> cells;

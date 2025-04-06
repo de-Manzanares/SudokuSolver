@@ -20,7 +20,7 @@ TEST_CASE("master") {
 TEST_CASE("naked subsets") {
   int solved{};
   int count{};
-  std::ifstream iFile("../../test/data/tmp.txt");
+  std::ifstream iFile("../../test/data/naked-subsets.txt");
   std::string puzzle;
   while (std::getline(iFile, puzzle)) {
     if (Sudoku s(puzzle); s.solve()) {

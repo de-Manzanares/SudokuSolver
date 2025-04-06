@@ -3,71 +3,7 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
-#include <map>
 #include <set>
-
-bool Sudoku::prune_naked_pair(const std::size_t n) {
-  bool got_one = false;
-  const auto house_type =
-      std::vector{&indices::rows, &indices::columns, &indices::boxes};
-
-  for (const auto &houses : house_type) {
-    for (const auto &house : *houses) {
-
-      // find which cells have n candidates
-      std::vector<int> size_n;
-      size_n.reserve(9);
-      for (const int cell : house) {
-        if (_candidates[cell].size() == n) {
-          size_n.emplace_back(cell);
-        }
-      }
-
-      // find if n cells share identical candidates
-      std::map<std::vector<int>, std::vector<int>> subsets;
-      for (const auto cell : size_n) {
-        subsets[_candidates[cell]].emplace_back(cell);
-      }
-      for (auto it = subsets.begin(); it != subsets.end();) {
-        if (it->second.size() != n) {
-          it = subsets.erase(it);
-        } else {
-          ++it;
-        }
-      }
-      for (const auto &subset : subsets) {
-        // for every cell in the house
-        for (const auto cell : house) {
-          // excluding the cells containing the naked subset
-          if (std::find(subset.second.begin(), subset.second.end(), cell) ==
-              subset.second.end()) {
-            auto it = std::remove_if(
-                _candidates[cell].begin(), _candidates[cell].end(),
-                [&subset](auto x) {
-                  return std::find(subset.first.begin(), subset.first.end(),
-                                   x) != subset.first.end();
-                });
-            if (it != _candidates[cell].end()) {
-              got_one = true;
-
-              // std::cout << "eliminate candidate by naked subset (cell, vals)
-              // : "
-              //           << std::setw(2) << cell << ", ";
-              // for (auto itt = it; itt != _candidates[cell].end(); ++itt) {
-              //   std::cout << std::setw(2) << *itt << ' ';
-              //   ++_candidates_pruned_by._subset_naked;
-              // }
-              // std::cout << '\n';
-
-              _candidates[cell].erase(it, _candidates[cell].end());
-            }
-          }
-        }
-      }
-    }
-  }
-  return got_one;
-}
 
 bool Sudoku::prune_naked_subset(const std::size_t n) {
   bool got_one = false;
@@ -77,65 +13,54 @@ bool Sudoku::prune_naked_subset(const std::size_t n) {
   for (const auto &houses : house_type) {
     for (const auto &house : *houses) {
 
-      // find which cells have n candidates
-      std::vector<int> size_n;
-      size_n.reserve(9);
+      // find which cells have at least 2 but not more than n candidates
+      std::vector<int> good_cells;
+      good_cells.reserve(9);
       for (const int cell : house) {
         if (2 <= _candidates[cell].size() && _candidates[cell].size() <= n) {
-          size_n.emplace_back(cell);
+          good_cells.emplace_back(cell);
         }
       }
 
-      // of those, find which combination of n candidates yields a union of
-      // cells of size n
-      std::map<int, std::vector<int>> val_to_cells;
-      for (const auto cell : size_n) {
-        for (const auto candidate : _candidates[cell]) {
-          val_to_cells[candidate].emplace_back(cell);
-        }
-      }
+      // find which combination of those cells has a union of n unique
+      // candidates
+      std::set<int> cells;            // the combination
+      std::set<int> union_candidates; // to hold the union of candidates
+      std::vector cell_mask(good_cells.size(), false);
+      if (good_cells.size() >= n) {
+        std::fill(std::prev(cell_mask.end(), n), cell_mask.end(), true);
 
-      std::vector<bool> select(val_to_cells.size(), false);
-      if (val_to_cells.size() >= n) {
-        std::fill(std::prev(select.end(), n), select.end(), true);
-      }
-      std::set<int> cells;
-      do {
-        cells.clear();
-        for (int i = 0; i < val_to_cells.size(); ++i) {
-          if (select[i]) {
-            for (const auto cell : std::next(val_to_cells.begin(), i)->second) {
-              cells.insert(cell);
+        do {
+          cells.clear();
+          union_candidates.clear();
+          for (std::size_t i = 0; i < cell_mask.size(); ++i) {
+            if (cell_mask[i]) {
+              cells.insert(good_cells[i]);
             }
           }
-        }
-        if (cells.size() == n) {
-          break;
-        }
-      } while (std::next_permutation(select.begin(), select.end()));
-
-      std::set<int> subset_vals;
-
-      if (cells.size() == n) {
-        for (const auto cell : cells) {
-          for (const auto candidate : _candidates[cell]) {
-            subset_vals.insert(candidate);
+          for (const auto cell : cells) {
+            for (const auto candidate : _candidates[cell]) {
+              union_candidates.insert(candidate);
+            }
           }
-        }
+          if (union_candidates.size() == n) {
+            break;
+          }
+        } while (std::next_permutation(cell_mask.begin(), cell_mask.end()));
       }
 
-      if (subset_vals.size() == n) {
-
+      if (union_candidates.size() == n) { // we found one!
         for (const auto cell : house) {
           if (cells.find(cell) == cells.end()) {
             auto it = std::remove_if(
                 _candidates[cell].begin(), _candidates[cell].end(),
-                [&subset_vals](auto x) {
-                  return std::find(subset_vals.begin(), subset_vals.end(), x) !=
-                         subset_vals.end();
+                [&union_candidates](auto x) {
+                  return std::find(union_candidates.begin(),
+                                   union_candidates.end(),
+                                   x) != union_candidates.end();
                 });
             if (it != _candidates[cell].end()) {
-              got_one = true;
+              got_one = true; // there are candidates to be pruned
               _candidates[cell].erase(it, _candidates[cell].end());
             }
           }

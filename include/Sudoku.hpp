@@ -4,16 +4,32 @@
 #include <array>
 #include <bitset>
 #include <iomanip>
+#include <optional>
+#include <unordered_set>
 #include <vector>
+
+/**
+ * @brief Used as a parameter to tell functions which sets of cell indices to
+ *        work with -- rows, columns, or boxes.
+ */
+enum class House { row, column, box };
+
+/**
+ * @brief Holds the location (cells) and values of a would be naked subset
+ */
+struct NakedSubset {
+  std::unordered_set<int> set_cells{};      ///< the cells in the subset
+  std::unordered_set<int> set_candidates{}; ///< the values in the subset
+};
+
+/**
+ * @brief Used as a parameter to tell functions the size of a subset we are
+ *        looking for.
+ */
+enum class SetSize : std::size_t { pair = 2, triple = 3, quad = 4 };
 
 class Sudoku {
  public:
-  /**
-   * @brief Used as a parameter to tell functions which sets of cell indices to
-   *        work with -- rows, columns, or boxes.
-   */
-  enum class House { row, column, box };
-
   /**
    * @brief   Construct a Sudoku object from a vector of integers representing
    *          the puzzle.
@@ -80,8 +96,16 @@ class Sudoku {
 
   bool solve();
 
-  bool prune_naked_subset(std::size_t n);
+  /**
+   * @brief   Remove erroneous candidates identified by naked subsets
+   * @param   set_size Pair, triple, or quad?
+   * @return  True - at least one candidate was removed \n
+   *          False - no candidates were removed
+   */
+  bool prune_naked_subset(SetSize set_size);
+
   bool prune_hidden_subsets(std::size_t n);
+
   bool prune_locked_claiming_candidates();
   bool prune_locked_pointing_candidates();
 
@@ -158,6 +182,18 @@ class Sudoku {
    *          False - a hidden single has not been found
    */
   bool find_hidden_singles(House tag);
+
+  /**
+   * @brief   Search the puzzle for a naked subset of size set_size
+   * @param   good_cells Cells with number of candidates n
+   *          such that 2 <= n <= set_size
+   * @param   set_size Are we looking for a pair (2), triple (3), or quad (4)?
+   * @return  An optional NakedSubset object which contains the indices of the
+   *          cells in which the subset is located and the values in the subset;
+   *          std::nullopt if no naked subset is found.
+   */
+  std::optional<NakedSubset>
+  find_naked_subset(const std::vector<int> &good_cells, SetSize set_size);
 
   // locked claiming
   bool prune_locked_claiming_candidates(House tag);

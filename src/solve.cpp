@@ -19,11 +19,11 @@ bool Sudoku::solve() {
       continue;
     }
 
-    if (prune_naked_subset(2)) {
+    if (prune_naked_subset(SetSize::pair)) {
       progress = true;
     }
 
-    if (prune_naked_subset(3)) {
+    if (prune_naked_subset(SetSize::triple)) {
       progress = true;
     }
 
@@ -36,7 +36,7 @@ bool Sudoku::solve() {
       continue;
     }
 
-    if (prune_naked_subset(4)) {
+    if (prune_naked_subset(SetSize::quad)) {
       progress = true;
     }
 

@@ -1,4 +1,5 @@
 #include "Sudoku.hpp"
+#include <iostream>
 
 void Sudoku::print_puzzle() const {
   for (int i = 0; i < PUZZLE_SIZE; ++i) {

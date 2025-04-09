@@ -1,13 +1,15 @@
+#include "Indices.hpp"
 #include "Sudoku.hpp"
+#include <algorithm>
 
 bool Sudoku::prune_x_wings(const std::size_t n) {
   bool got_one = false;
 
-  const auto &house_type = {indices::rows, indices::columns};
+  const auto &house_type = {Indices::rows, Indices::columns};
   for (const auto &house : house_type) {
     const auto &base_sets = house;
     const auto &cover_sets =
-        base_sets == indices::rows ? indices::columns : indices::rows;
+        base_sets == Indices::rows ? Indices::columns : Indices::rows;
 
     /// [base set][candidate value]{cover sets that value lies in}
     std::vector<std::vector<std::vector<int>>> candidate_locations(

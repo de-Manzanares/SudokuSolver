@@ -1,9 +1,10 @@
+#include "Indices.hpp"
 #include "Sudoku.hpp"
 #include <functional>
 
 bool Sudoku::prune_locked_claiming_candidates() {
-  const bool row = prune_locked_claiming_candidates(house::row);
-  const bool column = prune_locked_claiming_candidates(house::column);
+  const bool row = prune_locked_claiming_candidates(House::row);
+  const bool column = prune_locked_claiming_candidates(House::column);
   return row || column;
 }
 
@@ -12,9 +13,9 @@ bool Sudoku::prune_locked_claiming_candidates() {
 // If in a row (or column) all candidates of a certain digit are confined to
 // one block, that candidate that be eliminated from all other cells in that
 // block.
-bool Sudoku::prune_locked_claiming_candidates(const house tag) {
+bool Sudoku::prune_locked_claiming_candidates(const House tag) {
   bool got_one = false;
-  const auto &houses = tag == house::row ? indices::rows : indices::columns;
+  const auto &houses = tag == House::row ? Indices::rows : Indices::columns;
 
   for (int i = 0; i < 9; ++i) { // for each house of the houses
 
@@ -74,7 +75,7 @@ bool Sudoku::prune_locked_claiming_candidates(const house tag) {
                                             // for each claimed candidate
         for (const auto claimed : claimed_candidates[k]) {
           std::function<int()> choose_box;
-          if (tag == house::row) {
+          if (tag == House::row) {
             choose_box = [&i, &k]() {
               if (i < 3) {
                 return k;
@@ -88,7 +89,7 @@ bool Sudoku::prune_locked_claiming_candidates(const house tag) {
               return 0;
             };
           }
-          if (tag == house::column) {
+          if (tag == House::column) {
             choose_box = [&i, &k]() {
               if (i < 3) {
                 return k * 3;
@@ -103,7 +104,7 @@ bool Sudoku::prune_locked_claiming_candidates(const house tag) {
             };
           }
           // for each cell in the box
-          for (const auto cell : indices::boxes[choose_box()]) {
+          for (const auto cell : Indices::boxes[choose_box()]) {
             // if the cell is outside the intersection
             if (std::find(houses[i].begin(), houses[i].end(), cell) ==
                 houses[i].end()) {

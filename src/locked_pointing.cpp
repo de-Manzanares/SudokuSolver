@@ -1,4 +1,6 @@
+#include "Indices.hpp"
 #include "Sudoku.hpp"
+#include <algorithm>
 
 // pointing locked candidates
 // https://hodoku.sourceforge.net/en/tech_intersections.php
@@ -20,7 +22,7 @@ bool Sudoku::prune_locked_pointing_candidates() {
       for (int k = 0; k < 3; ++k) {
         for (int l = 0; l < 3; ++l) { // for each cell in that intersection
           for (const auto candidate :
-               _candidates[indices::subranges[i][j][k]->at(l)]) {
+               _candidates[Indices::subranges[i][j][k]->at(l)]) {
             intersections[k].push_back(candidate);
           }
         }
@@ -79,16 +81,17 @@ bool Sudoku::prune_locked_pointing_candidates() {
                 return 0;
               };
               // for each cell in the row
-              for (const auto cell : indices::rows[choose_row()]) {
+              for (const auto cell : Indices::rows[choose_row()]) {
                 // if the cell is not in the box
-                if (std::find(indices::subranges[i][j][k]->begin(),
-                              indices::subranges[i][j][k]->end(),
-                              cell) == indices::subranges[i][j][k]->end()) {
+                if (std::find(Indices::subranges[i][j][k]->begin(),
+                              Indices::subranges[i][j][k]->end(),
+                              cell) == Indices::subranges[i][j][k]->end()) {
                   // eliminate instances of the pointing candidate in that cell
                   for (auto it = _candidates[cell].begin();
                        it != _candidates[cell].end();) {
                     if (*it == candidate) {
-                      // std::cout << "eliminate candidate by locked pointing : "
+                      // std::cout << "eliminate candidate by locked pointing :
+                      // "
                       //           << std::setw(2) << cell << " " << candidate
                       //           << '\n';
                       ++_candidates_pruned_by._pointing_locked;
@@ -114,16 +117,17 @@ bool Sudoku::prune_locked_pointing_candidates() {
                 return 0;
               };
               // for each cell in the row
-              for (const auto cell : indices::columns[choose_column()]) {
+              for (const auto cell : Indices::columns[choose_column()]) {
                 // if the cell is not in the box
-                if (std::find(indices::subranges[i][j][k]->begin(),
-                              indices::subranges[i][j][k]->end(),
-                              cell) == indices::subranges[i][j][k]->end()) {
+                if (std::find(Indices::subranges[i][j][k]->begin(),
+                              Indices::subranges[i][j][k]->end(),
+                              cell) == Indices::subranges[i][j][k]->end()) {
                   // eliminate instances of the pointing candidate in that cell
                   for (auto it = _candidates[cell].begin();
                        it != _candidates[cell].end();) {
                     if (*it == candidate) {
-                      // std::cout << "eliminate candidate by locked pointing : "
+                      // std::cout << "eliminate candidate by locked pointing :
+                      // "
                       //           << std::setw(2) << cell << " " << candidate
                       //           << '\n';
                       ++_candidates_pruned_by._pointing_locked;

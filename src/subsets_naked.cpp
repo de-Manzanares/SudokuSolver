@@ -1,3 +1,4 @@
+#include "Indices.hpp"
 #include "Sudoku.hpp"
 
 #include <algorithm>
@@ -8,7 +9,7 @@
 bool Sudoku::prune_naked_subset(const std::size_t n) {
   bool got_one = false;
   const auto house_type =
-      std::vector{&indices::rows, &indices::columns, &indices::boxes};
+      std::vector{&Indices::rows, &Indices::columns, &Indices::boxes};
 
   for (const auto &houses : house_type) {
     for (const auto &house : *houses) {

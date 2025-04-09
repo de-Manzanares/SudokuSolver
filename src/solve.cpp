@@ -1,8 +1,6 @@
 #include "Sudoku.hpp"
-#include <chrono>
 
 bool Sudoku::solve() {
-  initialize_candidates();
   // print_candidates("Candidates:\n", _candidates);
 
   // const auto start = std::chrono::high_resolution_clock::now();

@@ -62,10 +62,33 @@ static constexpr std::array<std::array<int, 3>, 81> initialize_associations() {
   return associations;
 }
 
-struct indices {
+/**
+ * @brief Group cell indices into houses (rows, columns, boxes) and
+ * intersections for easy access.
+ */
+struct Indices {
+  /**
+   * @brief Group cell indices in to rows \n
+   * 0 (top of puzzle) to 8 (bottom of puzzle)
+   */
   static constexpr auto rows = initialize_rows();
+
+  /**
+   * @brief Group cell indices into columns \n
+   * 0 (left of puzzle) to 8 (right of puzzle)
+   */
   static constexpr auto columns = initialize_columns();
+
+  /**
+   * @brief Group cell indices into boxes, left to right, top to bottom: 0 (top
+   * left) to 8 (bottom right)
+   */
   static constexpr auto boxes = initialize_boxes();
+
+  /**
+   * @brief A way to quickly find which houses a given cell belongs to: \n
+   * associations[cell] = {cell's row, cell's column, cell's box}
+   */
   static constexpr auto associations = initialize_associations();
 
   using subrange = std::array<int, 3>;
@@ -132,6 +155,16 @@ struct indices {
   static constexpr subrange box8column7 = intersection(boxes[8], columns[7]);
   static constexpr subrange box8column8 = intersection(boxes[8], columns[8]);
 
+  /**
+   * @brief Groups indices of the intersections between boxes and the other
+   * two houses. \n
+   * subranges[box] = { \n
+   *  {box's top most row, middle row, bottom most row}, \n
+   *  {box's left most column, middle column, right most column} \n
+   *  }
+   *
+   *  Probably a bit more convoluted than it needs to be ... ?
+   */
   static constexpr std::array<std::array<std::array<const subrange *, 3>, 2>, 9>
       subranges = {{{{{&box0row0, &box0row1, &box0row2},
                       {&box0column0, &box0column1, &box0column2}}},

@@ -1,4 +1,6 @@
+#include "Indices.hpp"
 #include "Sudoku.hpp"
+#include <iostream>
 
 void Sudoku::check_puzzle() const {
   if (_puzzle.size() != PUZZLE_SIZE || !puzzle_is_valid()) {
@@ -8,14 +10,14 @@ void Sudoku::check_puzzle() const {
 }
 
 bool Sudoku::puzzle_is_valid() const {
-  return check_houses(house::row) && check_houses(house::column) &&
-         check_houses(house::box);
+  return check_houses(House::row) && check_houses(House::column) &&
+         check_houses(House::box);
 }
 
-bool Sudoku::check_houses(const house tag) const {
-  auto &houses = tag == house::row      ? indices::rows
-                 : tag == house::column ? indices::columns
-                                        : indices::boxes;
+bool Sudoku::check_houses(const House tag) const {
+  auto &houses = tag == House::row      ? Indices::rows
+                 : tag == House::column ? Indices::columns
+                                        : Indices::boxes;
   for (const auto &house : houses) {
     std::bitset<10> seen;
     for (const auto index : house) {

@@ -19,28 +19,28 @@ bool Sudoku::solve() {
       continue;
     }
 
-    if (prune_naked_subset(SetSize::pair)) {
+    if (prune_naked_subsets(SetSize::pair)) {
       progress = true;
     }
 
-    if (prune_naked_subset(SetSize::triple)) {
+    if (prune_naked_subsets(SetSize::triple)) {
       progress = true;
     }
 
-    if (prune_hidden_subsets(2)) {
+    if (prune_hidden_subsets(SetSize::pair)) {
       progress = true;
     }
 
-    if (prune_hidden_subsets(3)) {
+    if (prune_hidden_subsets(SetSize::triple)) {
       progress = true;
       continue;
     }
 
-    if (prune_naked_subset(SetSize::quad)) {
+    if (prune_naked_subsets(SetSize::quad)) {
       progress = true;
     }
 
-    if (prune_hidden_subsets(4)) {
+    if (prune_hidden_subsets(SetSize::quad)) {
       progress = true;
       continue;
     }

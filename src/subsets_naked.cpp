@@ -6,7 +6,7 @@
 #include <optional>
 #include <unordered_set>
 
-bool Sudoku::prune_naked_subset(const SetSize set_size) {
+bool Sudoku::prune_naked_subsets(const SetSize set_size) {
   bool got_one = false;
 
   auto is_good_cell = [this, set_size](const auto x) {
@@ -37,6 +37,9 @@ bool Sudoku::prune_naked_subset(const SetSize set_size) {
                   return set_candidates.find(x) != set_candidates.end();
                 });
             if (it != _candidates[cell].end()) {
+              for (auto itt = it; itt != _candidates[cell].end(); ++itt) {
+                ++_candidates_pruned_by._subset_naked;
+              }
               got_one = true;
               _candidates[cell].erase(it, _candidates[cell].end());
             }
@@ -48,7 +51,7 @@ bool Sudoku::prune_naked_subset(const SetSize set_size) {
   return got_one;
 }
 
-std::optional<NakedSubset>
+std::optional<Subset>
 Sudoku::find_naked_subset(const std::vector<int> &good_cells,
                           const SetSize set_size) {
   if (good_cells.size() >= static_cast<std::size_t>(set_size)) {
@@ -74,7 +77,7 @@ Sudoku::find_naked_subset(const std::vector<int> &good_cells,
         }
       }
       if (set_candidates.size() == static_cast<std::size_t>(set_size)) {
-        return NakedSubset{std::move(set_cells), std::move(set_candidates)};
+        return Subset{std::move(set_cells), std::move(set_candidates)};
       }
     } while (std::next_permutation(cell_mask.begin(), cell_mask.end()));
   }

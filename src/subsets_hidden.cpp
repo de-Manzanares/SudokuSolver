@@ -3,100 +3,106 @@
 
 #include <algorithm>
 #include <functional>
-#include <iostream>
 #include <map>
-#include <set>
 #include <unordered_map>
 
-bool Sudoku::prune_hidden_subsets(const size_t n) {
+bool Sudoku::prune_hidden_subsets(const SetSize set_size) {
   bool got_one = false;
+
   const auto house_type =
       std::vector{&Indices::rows, &Indices::columns, &Indices::boxes};
 
   for (const auto &houses : house_type) {
     for (const auto &house : *houses) {
-      std::unordered_map<int, std::vector<int>> candidates_to_cells;
-      // for each candidate, find in which cells of the house it resides
-      for (int val = 1; val < 10; ++val) {
+
+      std::vector<std::size_t> candidate_frequency(10);
+      for (const auto cell : house) {
+        for (const auto candidate : _candidates[cell]) {
+          ++candidate_frequency[candidate];
+        }
+      }
+
+      auto is_good_candidate = [set_size, &candidate_frequency](const auto x) {
+        return 2 <= candidate_frequency[x] &&
+               candidate_frequency[x] <= static_cast<std::size_t>(set_size);
+      };
+
+      std::vector<int> good_candidates;
+      good_candidates.reserve(9);
+      for (int i = 1; i < 10; ++i) {
+        if (is_good_candidate(i)) {
+          good_candidates.emplace_back(i);
+        }
+      }
+
+      std::unordered_map<int, std::vector<int>> candidate_to_cells;
+      for (const auto val : good_candidates) {
         for (const auto cell : house) {
           for (const auto candidate : _candidates[cell]) {
             if (val == candidate) {
-              candidates_to_cells[val].push_back(cell);
+              candidate_to_cells[val].push_back(cell);
             }
           }
         }
       }
-      // now we can search for the pairs/triples/quads in the house
-      std::unordered_map<int, std::vector<int>> val_to_cells;
-      for (const auto &[val, cells] : candidates_to_cells) {
-        if ((n == 2 && cells.size() == 2) ||
-            (n == 3 && (1 < cells.size() && cells.size() < 4)) ||
-            (n == 4 && (1 < cells.size() && cells.size() < 5))) {
-          val_to_cells[val] = cells;
-        }
-      }
 
-      std::map<std::vector<int>, std::size_t> cells_frequency;
-      for (const auto &[val, cells] : val_to_cells) {
-        ++cells_frequency[cells];
-      }
+      if (const auto hidden_subset = find_hidden_subsets(
+              good_candidates, candidate_to_cells, set_size)) {
+        const auto &set_cells = hidden_subset->set_cells;
+        const auto &set_candidates = hidden_subset->set_candidates;
 
-      for (auto it = cells_frequency.begin(); it != cells_frequency.end();) {
-        if (it->second != n) {
-          it = cells_frequency.erase(it);
-        } else {
-          ++it;
-        }
-      }
-
-      for (const auto &[fcells, freq] : cells_frequency) {
-        for (auto it = val_to_cells.begin(); it != val_to_cells.end();) {
-          if (fcells != it->second) {
-            it = val_to_cells.erase(it);
-          } else {
-            ++it;
-          }
-        }
-      }
-
-      if (val_to_cells.size() == n) {
-        // calculate the union of the cells
-        std::set<int> cells;
-        for (const auto &[val, lcells] : val_to_cells) {
-          std::copy(lcells.begin(), lcells.end(),
-                    std::inserter(cells, cells.begin()));
-        }
-
-        if (cells.size() == n) {
-          std::set<int> values;
-          for (auto &[value, cells] : val_to_cells) {
-            values.insert(value);
-          }
-          for (const auto cell : cells) {
-            auto it =
-                std::remove_if(_candidates[cell].begin(),
-                               _candidates[cell].end(), [&values](auto x) {
-                                 return std::find(values.begin(), values.end(),
-                                                  x) == values.end();
-                               });
-            if (it != _candidates[cell].end()) {
-              got_one = true;
-
-              // std::cout
-              //     << "eliminate candidate by hidden subset (cell, vals) : "
-              //     << std::setw(2) << cell << ", ";
-              // for (auto itt = it; itt != _candidates[cell].end(); ++itt) {
-              //   std::cout << std::setw(2) << *itt << ' ';
-              //   ++_candidates_pruned_by._subset_hidden;
-              // }
-              // std::cout << '\n';
-
-              _candidates[cell].erase(it, _candidates[cell].end());
+        for (const auto cell : set_cells) {
+          auto it = std::remove_if(
+              _candidates[cell].begin(), _candidates[cell].end(),
+              [&set_candidates](auto x) {
+                return set_candidates.find(x) == set_candidates.end();
+              });
+          if (it != _candidates[cell].end()) {
+            got_one = true;
+            for (auto itt = it; itt != _candidates[cell].end(); ++itt) {
+              ++_candidates_pruned_by._subset_hidden;
             }
+            _candidates[cell].erase(it, _candidates[cell].end());
           }
         }
       }
     }
   }
   return got_one;
+}
+
+std::optional<Subset> Sudoku::find_hidden_subsets(
+    const std::vector<int> &good_candidates,
+    const std::unordered_map<int, std::vector<int>> &candidates_to_cells,
+    const SetSize set_size) {
+  if (good_candidates.size() >= static_cast<std::size_t>(set_size)) {
+    std::unordered_set<int> set_candidates;
+    std::unordered_set<int> set_cells;
+
+    std::vector candidate_mask(good_candidates.size(), false);
+    std::fill(
+        std::prev(candidate_mask.end(), static_cast<std::ptrdiff_t>(set_size)),
+        candidate_mask.end(), true);
+
+    do {
+      set_candidates.clear();
+      set_cells.clear();
+
+      for (std::size_t i = 0; i < candidate_mask.size(); ++i) {
+        if (candidate_mask[i]) {
+          set_candidates.insert(good_candidates[i]);
+        }
+      }
+      for (const auto candidate : set_candidates) {
+        for (const auto cell : candidates_to_cells.at(candidate)) {
+          set_cells.insert(cell);
+        }
+      }
+      if (set_cells.size() == static_cast<std::size_t>(set_size)) {
+        return Subset{std::move(set_cells), std::move(set_candidates)};
+      }
+    } while (
+        std::next_permutation(candidate_mask.begin(), candidate_mask.end()));
+  }
+  return std::nullopt;
 }

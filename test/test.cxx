@@ -21,7 +21,24 @@ TEST_CASE("master") {
 TEST_CASE("naked subsets") {
   int solved{};
   int count{};
-  std::ifstream iFile("../../test/data/naked-subsets.txt");
+  std::ifstream iFile("../../test/data/subsets-naked.txt");
+  std::string puzzle;
+  while (std::getline(iFile, puzzle)) {
+    if (Sudoku s(puzzle); s.solve()) {
+      ++solved;
+    } else {
+      s.print_puzzle();
+    }
+    ++count;
+  }
+  std::cout << "Solved: " << solved << '/' << count << '\t'
+            << 100.0 * double(solved) / double(count) << "%" << std::endl;
+}
+
+TEST_CASE("hidden subsets") {
+  int solved{};
+  int count{};
+  std::ifstream iFile("../../test/data/subsets-hidden.txt");
   std::string puzzle;
   while (std::getline(iFile, puzzle)) {
     if (Sudoku s(puzzle); s.solve()) {

@@ -5,29 +5,38 @@
 #include <bitset>
 #include <iomanip>
 #include <optional>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 /**
+ * @enum House
  * @brief Used as a parameter to tell functions which sets of cell indices to
  *        work with -- rows, columns, or boxes.
  */
 enum class House { row, column, box };
 
 /**
- * @brief Holds the location (cells) and values of a would be naked subset
+ * @struct Subset
+ * @brief Holds the cell indices and values of a naked subset
  */
-struct NakedSubset {
+struct Subset {
   std::unordered_set<int> set_cells{};      ///< the cells in the subset
   std::unordered_set<int> set_candidates{}; ///< the values in the subset
 };
 
 /**
- * @brief Used as a parameter to tell functions the size of a subset we are
+ * @enum SetSize
+ * @brief Used as a parameter to tell functions the size of subset we are
  *        looking for.
  */
 enum class SetSize : std::size_t { pair = 2, triple = 3, quad = 4 };
 
+/**
+ * @class Sudoku
+ * @brief Represents a Sudoku puzzle and tracks all information needed to
+ *        (attempt to) solve that puzzle.
+ */
 class Sudoku {
  public:
   /**
@@ -69,15 +78,6 @@ class Sudoku {
   void check_puzzle() const;
 
   /**
-   * @brief Happens once per Sudoku object during construction. \n
-   * We find all the "candidates" (possible values) for each unknown cell. \n
-   * The whole purpose of the methods in this library is to reduce this list of
-   * candidates until there are no more unknowns -- or until we are sad because
-   * the puzzle is too difficult.
-   */
-  void initialize_candidates();
-
-  /**
    * @brief   The most fundamental solving technique in Sudoku -- if a cell has
    *          only one possible value, it has only one possible value lol.
    * @return  True - at least one naked single has been found and solved \n
@@ -102,9 +102,15 @@ class Sudoku {
    * @return  True - at least one candidate was removed \n
    *          False - no candidates were removed
    */
-  bool prune_naked_subset(SetSize set_size);
+  bool prune_naked_subsets(SetSize set_size);
 
-  bool prune_hidden_subsets(std::size_t n);
+  /**
+   * @brief   Remove erroneous candidates identified by hidden subsets
+   * @param   set_size Pair, triple, or quad?
+   * @return  True - at least one candidate was removed \n
+   *          False - no candidates were removed
+   */
+  bool prune_hidden_subsets(SetSize set_size);
 
   bool prune_locked_claiming_candidates();
   bool prune_locked_pointing_candidates();
@@ -125,8 +131,12 @@ class Sudoku {
 
   std::vector<int> _puzzle;            ///< the puzzle
   std::bitset<PUZZLE_SIZE> _unknown{}; ///< tracks unknown cells
-  std::vector<std::vector<int>> _candidates{PUZZLE_SIZE}; ///< tracks candidates
-  std::array<int, 81> _singles{}; ///< tracks the location of hidden singles
+
+  /// _candidates[cell] = {all candidates for that cell}
+  std::vector<std::vector<int>> _candidates{PUZZLE_SIZE};
+
+  /// tracks the location and values of hidden singles
+  std::array<int, 81> _singles{};
 
   int _naked_singles{};  ///< number of naked singles solved
   int _hidden_singles{}; ///< number of hidden singles solved
@@ -150,6 +160,15 @@ class Sudoku {
 
   // initialize candidates
   void find_unknown_Indices();
+
+  /**
+   * @brief Happens once per Sudoku object during construction. \n
+   * We find all the "candidates" (possible values) for each unknown cell. \n
+   * The whole purpose of the methods in this library is to reduce this list of
+   * candidates until there are no more unknowns -- or until we are sad because
+   * the puzzle is too difficult.
+   */
+  void initialize_candidates();
 
   /**
    * @brief A cell's candidates are the complement of the set of all known
@@ -188,12 +207,32 @@ class Sudoku {
    * @param   good_cells Cells with number of candidates n
    *          such that 2 <= n <= set_size
    * @param   set_size Are we looking for a pair (2), triple (3), or quad (4)?
-   * @return  An optional NakedSubset object which contains the indices of the
+   * @return  An optional Subset object which contains the indices of the
    *          cells in which the subset is located and the values in the subset;
    *          std::nullopt if no naked subset is found.
    */
-  std::optional<NakedSubset>
-  find_naked_subset(const std::vector<int> &good_cells, SetSize set_size);
+  std::optional<Subset> find_naked_subset(const std::vector<int> &good_cells,
+                                          SetSize set_size);
+
+  /**
+   * @brief   Search the puzzle for a hidden subset of size set_size
+   * @param   good_candidates Candidates with a house frequency of n
+   *          such that 2 <= n <= set_size
+   * @param   candidates_to_cells Associative map of a candidate to the house
+   *          cells in which it appears.
+   * @param   set_size Are we looking for a pair (2), triple (3), or quad (4)?
+   * @return  An optional Subset object which contains the indices of the
+   *          cells in which the subset is located and the values in the subset;
+   *          std::nullopt if no naked subset is found.
+   * @note    It may be better to maintain a map of candidates to cells in which
+   *          they appear , grouped by houses, so that the caller of this
+   *          function doesn't have to evaluate such a map each time this
+   *          function is called.
+   */
+  static std::optional<Subset> find_hidden_subsets(
+      const std::vector<int> &good_candidates,
+      const std::unordered_map<int, std::vector<int>> &candidates_to_cells,
+      SetSize set_size);
 
   // locked claiming
   bool prune_locked_claiming_candidates(House tag);

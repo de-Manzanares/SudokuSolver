@@ -112,7 +112,13 @@ class Sudoku {
    */
   bool prune_hidden_subsets(SetSize set_size);
 
+  /**
+   * @brief   Remove erroneous candidates identified by box line reduction
+   * @return  True - at least one candidate was removed \n
+   *          False - no candidates were removed
+   */
   bool prune_locked_claiming_candidates();
+
   bool prune_locked_pointing_candidates();
 
   void print_puzzle() const;
@@ -223,9 +229,9 @@ class Sudoku {
    * @param   set_size Are we looking for a pair (2), triple (3), or quad (4)?
    * @return  An optional Subset object which contains the indices of the
    *          cells in which the subset is located and the values in the subset;
-   *          std::nullopt if no naked subset is found.
+   *          std::nullopt if no hidden subset is found.
    * @note    It may be better to maintain a map of candidates to cells in which
-   *          they appear , grouped by houses, so that the caller of this
+   *          they appear, grouped by houses, so that the caller of this
    *          function doesn't have to evaluate such a map each time this
    *          function is called.
    */
@@ -234,8 +240,30 @@ class Sudoku {
       const std::unordered_map<int, std::vector<int>> &candidates_to_cells,
       SetSize set_size);
 
-  // locked claiming
+  /**
+   * @brief   A helper for the public method -- the current implementation
+   *          requires the type of house to be known in order to figure out
+   *          which box we are working with
+   * @param   tag rows or columns?
+   * @return  True - at least one candidate was removed \n
+   *          False - no candidates were removed
+   */
   bool prune_locked_claiming_candidates(House tag);
+
+  /**
+   * @brief   Search all rows, or all columns, for claimed candidates.
+   * @param   houses Rows or columns?
+   * @param   house Which row or column?
+   * @return  An optional 2d vector containing the claimed candidates -- the
+   *          index of the sub vector corresponds to the intersection of the
+   *          house and the box that claims that candidate. [0,2] represents
+   *          boxes left to right if a row is being used, or top to bottom if a
+   *          column is being used; returns std::nullopt if no claimed
+   *          candidates are found
+   */
+  std::optional<std::vector<std::vector<int>>>
+  find_claimed_candidates(const std::array<std::array<int, 9>, 9> &houses,
+                          int house);
 };
 
 #endif // SUDOKU_SOLVER_INCLUDE_SUDOKU_HPP_

@@ -2,13 +2,6 @@
 #include "Sudoku.hpp"
 #include <algorithm>
 
-// pointing locked candidates
-// https://hodoku.sourceforge.net/en/tech_intersections.php
-// If in a block all candidates of a certain digit are confined to a row or
-// column, that digit cannot appear outside of that block in that row or
-// column.
-// identify if a candidate only appears in one row or column of a box
-
 bool Sudoku::prune_locked_pointing_candidates() {
   bool got_one = false;
   for (int i = 0; i < 9; ++i) {   // for each box
@@ -126,10 +119,6 @@ bool Sudoku::prune_locked_pointing_candidates() {
                   for (auto it = _candidates[cell].begin();
                        it != _candidates[cell].end();) {
                     if (*it == candidate) {
-                      // std::cout << "eliminate candidate by locked pointing :
-                      // "
-                      //           << std::setw(2) << cell << " " << candidate
-                      //           << '\n';
                       ++_candidates_pruned_by._pointing_locked;
                       got_one = true;
                       it = _candidates[cell].erase(it);

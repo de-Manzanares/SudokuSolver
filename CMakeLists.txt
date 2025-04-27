@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.10)
 
-project(sudoku_solver)
+project(SudokuSolver LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -30,9 +30,10 @@ target_link_options(
         $<$<CONFIG:Sanitizer>:$<$<CXX_COMPILER_ID:GNU,Clang>:${SANLinkerOptions}>>
 )
 
-add_library(sudoku-solver STATIC)
+add_library(_SudokuSolver STATIC)
+add_library(SudokuSolver::SudokuSolver ALIAS _SudokuSolver)
 target_sources(
-        sudoku-solver
+        _SudokuSolver
         PRIVATE
         src/check.cpp
         src/initialize_candidates.cpp
@@ -46,12 +47,14 @@ target_sources(
         src/x-wing.cpp
 )
 target_include_directories(
-        sudoku-solver
+        _SudokuSolver
         PRIVATE
-        include
+        include/private
+        PUBLIC
+        include/public
 )
 target_link_libraries(
-        sudoku-solver
+        _SudokuSolver
         PRIVATE
         common-options
 )

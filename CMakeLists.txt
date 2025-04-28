@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(SudokuSolver LANGUAGES CXX)
+project(SudokuSolver VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -30,8 +30,10 @@ target_link_options(
         $<$<CONFIG:Sanitizer>:$<$<CXX_COMPILER_ID:GNU,Clang>:${SANLinkerOptions}>>
 )
 
-add_library(_SudokuSolver STATIC)
+add_library(_SudokuSolver)
+
 add_library(SudokuSolver::SudokuSolver ALIAS _SudokuSolver)
+
 target_sources(
         _SudokuSolver
         PRIVATE
@@ -48,10 +50,10 @@ target_sources(
 )
 target_include_directories(
         _SudokuSolver
-        PRIVATE
-        include/private
         PUBLIC
         include/public
+        PRIVATE
+        include/private
 )
 target_link_libraries(
         _SudokuSolver

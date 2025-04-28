@@ -30,35 +30,40 @@ target_link_options(
         $<$<CONFIG:Sanitizer>:$<$<CXX_COMPILER_ID:GNU,Clang>:${SANLinkerOptions}>>
 )
 
-add_library(_SudokuSolver)
+add_library(_SudokuSolver_old)
 
-add_library(SudokuSolver::SudokuSolver ALIAS _SudokuSolver)
+add_library(SudokuSolver::SudokuSolver_old ALIAS _SudokuSolver_old)
 
 target_sources(
-        _SudokuSolver
+        _SudokuSolver_old
         PRIVATE
-        src/check.cpp
-        src/initialize_candidates.cpp
-        src/print.cpp
-        src/solve.cpp
-        src/singles.cpp
-        src/locked_claiming.cpp
-        src/locked_pointing.cpp
-        src/subsets_hidden.cpp
-        src/subsets_naked.cpp
-        src/x-wing.cpp
+        old/src/check.cpp
+        old/src/initialize_candidates.cpp
+        old/src/print.cpp
+        old/src/solve.cpp
+        old/src/singles.cpp
+        old/src/locked_claiming.cpp
+        old/src/locked_pointing.cpp
+        old/src/subsets_hidden.cpp
+        old/src/subsets_naked.cpp
+        old/src/x-wing.cpp
 )
 target_include_directories(
-        _SudokuSolver
+        _SudokuSolver_old
         PUBLIC
-        include/public
+        old/include/public
         PRIVATE
-        include/private
+        old/include/private
 )
 target_link_libraries(
-        _SudokuSolver
+        _SudokuSolver_old
         PRIVATE
         common-options
 )
 
+add_library(_SudokuPuzzle INTERFACE)
+add_library(SudokuSolver::SudokuPuzzle ALIAS _SudokuPuzzle)
+target_include_directories(_SudokuPuzzle INTERFACE include)
+
 add_subdirectory(test)
+add_subdirectory(old/test)

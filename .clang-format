@@ -1,4 +1,3 @@
 BasedOnStyle: LLVM
-IndentWidth: 2
-IndentAccessModifiers: false
-AccessModifierOffset: -1
+AllowShortCaseLabelsOnASingleLine: true
+InsertNewlineAtEOF: true

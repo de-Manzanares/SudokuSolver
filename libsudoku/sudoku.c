@@ -1,6 +1,8 @@
 #include "sudoku.h"
+#include "config.h"
 
 #include <stdio.h>
+#include <string.h>
 
 const num_t HOUSE_SZ = 9;   /* number of cells in house */
 const num_t PUZZLE_SZ = 81; /* number of cells in puzzle */
@@ -43,7 +45,7 @@ void sudoku_init(struct Sudoku *s) {
   }
 }
 
-num_t sudoku_load(struct Sudoku *s, const char *cs) {
+uint8_t sudoku_load(struct Sudoku *s, const char *cs) {
   num_t cs_len = 0;
   while (cs_len <= PUZZLE_SZ) {
     if (cs[cs_len] == '\0') {
@@ -55,13 +57,13 @@ num_t sudoku_load(struct Sudoku *s, const char *cs) {
     printf("sudoku_load() failed - input is too short - given "
            "%d/%d characters\n",
            cs_len, PUZZLE_SZ);
-    return (num_t)-1;
+    return 0;
   }
   if (cs_len > PUZZLE_SZ) {
     printf("sudoku_load() failed - input is too long - given %d/%d "
            "characters\n",
            cs_len, PUZZLE_SZ);
-    return (num_t)-1;
+    return 0;
   }
   for (num_t i = 0; i < PUZZLE_SZ; i++) {
     if ('0' <= cs[i] && cs[i] <= '9') {
@@ -77,10 +79,16 @@ num_t sudoku_load(struct Sudoku *s, const char *cs) {
         putchar(' ');
       }
       printf("^\n");
-      return (num_t)-1;
+      return 0;
     }
   }
-  return 0;
+
+  if (!sudoku_check_form(s)) {
+    return 0;
+  }
+  sudoku_init_solved(s);
+  sudoku_init_candidates(s);
+  return 1;
 }
 
 num_t sudoku_cell_val(const struct Sudoku *s, const num_t cell) {
@@ -103,7 +111,7 @@ void sudoku_cell_set_solved(struct Sudoku *s, const num_t cell) {
   }
 }
 
-void sudoku_solved_init(struct Sudoku *s) {
+void sudoku_init_solved(struct Sudoku *s) {
   for (int i = 0; i < PUZZLE_SZ; ++i) {
     if (s->cells[i] != 0) {
       sudoku_cell_set_solved(s, i);
@@ -111,24 +119,26 @@ void sudoku_solved_init(struct Sudoku *s) {
   }
 }
 
-num_t sudoku_check_form(const struct Sudoku *s) {
+uint8_t sudoku_check_form(const struct Sudoku *s) {
   /* rows */
   for (num_t i = 0; i < HOUSE_SZ; ++i) {
-    uint8_t seen[HOUSE_SZ + 1] = {0};
+    uint8_t seen[HOUSE_SZ + 1];
+    memset(seen, 0, HOUSE_SZ + 1);
     for (num_t j = 0; j < HOUSE_SZ; ++j) {
       seen[sudoku_cell_val(s, rcs[i][j])]++; /* i , j */
       for (num_t k = 1; k <= HOUSE_SZ; ++k) {
         if (seen[k] > 1) {
           printf("puzzle is malformed - ");
           printf("%d appears %d times in row %d\n", k, seen[k], i + 1);
-          return (num_t)-1;
+          return 0;
         }
       }
     }
   }
   /* column */
   for (num_t i = 0; i < HOUSE_SZ; ++i) {
-    uint8_t seen[HOUSE_SZ + 1] = {0};
+    uint8_t seen[HOUSE_SZ + 1];
+    memset(seen, 0, HOUSE_SZ + 1);
     for (num_t j = 0; j < HOUSE_SZ; ++j) {
       seen[sudoku_cell_val(s, rcs[j][i])]++; /* j , i */
       for (num_t k = 1; k <= HOUSE_SZ; ++k) {
@@ -137,26 +147,27 @@ num_t sudoku_check_form(const struct Sudoku *s) {
           printf("%d appears %d times in column "
                  "%d\n",
                  k, seen[k], i + 1);
-          return (num_t)-1;
+          return 0;
         }
       }
     }
   }
   /* box */
   for (num_t i = 0; i < HOUSE_SZ; ++i) {
-    uint8_t seen[HOUSE_SZ + 1] = {0};
+    uint8_t seen[HOUSE_SZ + 1];
+    memset(seen, 0, HOUSE_SZ + 1);
     for (num_t j = 0; j < HOUSE_SZ; ++j) {
       seen[sudoku_cell_val(s, boxes[i][j])]++;
       for (num_t k = 1; k <= HOUSE_SZ; ++k) {
         if (seen[k] > 1) {
           printf("puzzle is malformed - ");
           printf("%d appears %d times in box %d\n", k, seen[k], i + 1);
-          return (num_t)-1;
+          return 0;
         }
       }
     }
   }
-  return 0;
+  return 1;
 }
 
 num_t sudoku_cell_get_row(const num_t cell) { return cell / HOUSE_SZ; }
@@ -171,13 +182,15 @@ num_t sudoku_cell_get_box(const num_t cell) {
       }
     }
   }
+  return (num_t)-1;
 }
 
-void sudoku_candidates_cell_init(struct Sudoku *s, const num_t cell) {
+void sudoku_init_cell_candidates(struct Sudoku *s, const num_t cell) {
   const num_t row = sudoku_cell_get_row(cell);
   const num_t column = sudoku_cell_get_column(cell);
   const num_t box = sudoku_cell_get_box(cell);
-  uint8_t seen[HOUSE_SZ + 1] = {0};
+  uint8_t seen[HOUSE_SZ + 1];
+  memset(seen, 0, HOUSE_SZ + 1);
   for (num_t i = 0; i < HOUSE_SZ; ++i) {
     seen[sudoku_cell_val(s, rcs[row][i])]++;
   }
@@ -187,31 +200,117 @@ void sudoku_candidates_cell_init(struct Sudoku *s, const num_t cell) {
   for (num_t i = 0; i < HOUSE_SZ; ++i) {
     seen[sudoku_cell_val(s, boxes[box][i])]++;
   }
-  for (num_t i = 0; i < HOUSE_SZ; ++i) {
+  for (num_t i = 1; i <= HOUSE_SZ; ++i) {
     if (seen[i] == 0) {
-      s->candidates[cell][i] = 1;
+      s->candidates[cell][i - 1] = 1;
     }
   }
 }
 
-void sudoku_candidates_init(struct Sudoku *s) {
+void sudoku_init_candidates(struct Sudoku *s) {
   // count all values seen in a cell's row, column, and box
   // the candidates for that cell are the complement of that set
   for (num_t i = 0; i < PUZZLE_SZ; ++i) {
     if (s->solved[i] == 0) {
-      sudoku_candidates_cell_init(s, i);
+      sudoku_init_cell_candidates(s, i);
     }
   }
 }
 
-void sudoku_print_candidates(struct Sudoku *s) {
-  for (num_t i = 0; i < PUZZLE_SZ; ++i) {
-    printf("cell %d: ", i);
-    for (num_t j = 0; j < HOUSE_SZ; ++j) {
-      if (s->candidates[i][j] == 1) {
-        printf("%d ", j);
+/* naked single - the only candidate in a cell */
+num_t sudoku_solve_singles_naked(struct Sudoku *s) {
+
+#ifdef PRINT_NAKED_SINGLES_
+  printf("solve method cell(value)\n");
+#endif
+
+  num_t n_solved = 0;
+  for (num_t cell = 0; cell < PUZZLE_SZ; ++cell) {
+    num_t candidate_idx = 0;   /* last seen candidate */
+    num_t candidate_count = 0; /* number of candidates for this cell */
+    if (s->solved[cell] == 0) {
+      for (num_t j = 0; j < HOUSE_SZ; ++j) {
+        if (s->candidates[cell][j] != 0) {
+          candidate_idx = j;
+          ++candidate_count;
+        }
+        if (candidate_count > 1) {
+          break;
+        }
       }
     }
-    putchar('\n');
+    if (candidate_count == 1) {
+
+#ifdef PRINT_NAKED_SINGLES_
+      printf("naked single %d(%d)\n", cell, candidate_idx + 1);
+#endif
+
+      ++n_solved;
+      /* update puzzle */
+      s->cells[cell] = candidate_idx + 1;
+
+      /* update solved */
+      s->solved[cell] = 1;
+
+      /* update candidates */
+      s->candidates[cell][candidate_idx] = 0;
+
+      /* also, for every other cell in this cell's */
+      /* row */
+      const num_t row = sudoku_cell_get_row(cell);
+      for (num_t k = 0; k < HOUSE_SZ; ++k) {
+        s->candidates[rcs[row][k]][candidate_idx] = 0;
+      }
+
+      /* column */
+      const num_t column = sudoku_cell_get_column(cell);
+      for (num_t k = 0; k < HOUSE_SZ; ++k) {
+        s->candidates[rcs[k][column]][candidate_idx] = 0;
+      }
+
+      /* box */
+      const num_t box = sudoku_cell_get_box(cell);
+      for (num_t k = 0; k < HOUSE_SZ; ++k) {
+        s->candidates[boxes[box][k]][candidate_idx] = 0;
+      }
+    }
   }
+  return n_solved;
+}
+
+uint8_t sudoku_is_solved(const struct Sudoku *s) {
+  for (num_t cell = 0; cell < PUZZLE_SZ; ++cell) {
+    if (s->solved[cell] == 0) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+void sudoku_print_candidates(const struct Sudoku *s) {
+  for (num_t i = 0; i < PUZZLE_SZ; ++i) {
+    num_t candidate_count = 0;
+    for (num_t j = 0; j < HOUSE_SZ; ++j) {
+      if (s->candidates[i][j] != 0) {
+        ++candidate_count;
+        break;
+      }
+    }
+    if (candidate_count > 0) {
+      printf("cell %d: ", i);
+      for (num_t j = 0; j < HOUSE_SZ; ++j) {
+        if (s->candidates[i][j] == 1) {
+          printf("%d ", j + 1);
+        }
+      }
+      putchar('\n');
+    }
+  }
+}
+
+void sudoku_print_puzzle(const struct Sudoku *s) {
+  for (num_t i = 0; i < PUZZLE_SZ; ++i) {
+    putchar(s->cells[i] + '0');
+  }
+  putchar('\n');
 }

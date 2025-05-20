@@ -6,14 +6,16 @@ int main(int argc, char **argv) {
   struct Sudoku sudoku;
   sudoku_init(&sudoku);
   // clang-format off
-  if (sudoku_load(&sudoku, "200070038000006070300040600008020700100000006007030400004080009060400000910060002") != 0) {
+  if (!sudoku_load(&sudoku, "290167003108000200000830491051000702080029130300006004872600000600280540000901020")) {
     return 1;
   }
   // clang-format on
-  if (sudoku_check_form(&sudoku) != 0) {
-    return 1;
+
+  uint8_t naked_singles = 0;
+  while (!sudoku_is_solved(&sudoku)) {
+    naked_singles += sudoku_solve_singles_naked(&sudoku);
   }
-  sudoku_candidates_init(&sudoku);
-  // sudoku_print_candidates(&sudoku);
+  printf("\nSolved %d naked singles\n", naked_singles);
+  sudoku_print_puzzle(&sudoku);
   return 0;
 }

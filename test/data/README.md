@@ -1,0 +1,1 @@
+For the 50k tests, see https://www.sudokuwiki.org/top50000.zip

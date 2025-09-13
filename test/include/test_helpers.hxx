@@ -9,7 +9,6 @@ inline void attempt_solve(std::string_view filename) {
   if (!std::filesystem::exists(filename)) {
     std::cerr << "Cannot find file '" << filename << "' in search path:\n"
               << std::filesystem::current_path();
-    std::exit(EXIT_FAILURE);
   }
   if (std::ifstream in_file(filename.data()); in_file.is_open()) {
     double count{};
@@ -25,7 +24,6 @@ inline void attempt_solve(std::string_view filename) {
               << 100.0 * solved / count << "%" << '\n';
   } else {
     std::cerr << "Failed to open file " << filename << '\n';
-    std::exit(EXIT_FAILURE);
   }
 }
 

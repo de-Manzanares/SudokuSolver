@@ -1,7 +1,6 @@
 if (ENABLE_TESTS)
 
-    add_executable(50k)
-    add_executable(techniques)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
     include(FetchContent)
     FetchContent_Declare(
@@ -27,6 +26,18 @@ if (ENABLE_TESTS)
             TestHelpers
             SudokuSolver::SudokuSolver
             Catch2::Catch2WithMain
+    )
+
+    add_executable(50k)
+    add_executable(techniques)
+
+    add_custom_target(
+            copy_puzzles ALL
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${PROJECT_SOURCE_DIR}/test/data
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/data
+            COMMENT "Copying puzzles to ${CMAKE_BINARY_DIR}/bin"
+            DEPENDS techniques 50k
     )
 
     target_sources(

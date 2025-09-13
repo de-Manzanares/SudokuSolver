@@ -10,6 +10,7 @@ set(COVCompilerOptions --coverage ${CompilerOptions})
 set(COVLinkerOptions --coverage)
 set(SANCompilerOptions -fsanitize=address,undefined ${CompilerOptions})
 set(SANLinkerOptions -fsanitize=address,undefined)
+set(RELEASECompilerOptions -O3 -ffast-math)
 
 add_library(
         common-options
@@ -21,7 +22,7 @@ target_compile_options(
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:GNU,Clang>:${DEBUGCompilerOptions}>>
         $<$<CONFIG:Coverage>:$<$<CXX_COMPILER_ID:GNU,Clang>:${COVCompilerOptions}>>
         $<$<CONFIG:Sanitizer>:$<$<CXX_COMPILER_ID:GNU,Clang>:${SANCompilerOptions}>>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+        $<$<CONFIG:Release>:$<$<CXX_COMPILER_ID:GNU,Clang>:${RELEASECompilerOptions}>>
 )
 target_link_options(
         common-options

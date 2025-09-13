@@ -20,13 +20,6 @@ this library implements methods that a person with pencil and paper would use.
 A small number of techniques have been implemented.
 In concert, they are enough to solve most "hard" puzzles.
 
-There are many more techniques to implement, but a more pressing issue is the
-quality and organization of the existing code. Furthermore, there is a need to
-refactor the codebase following a change in the design philosophy of the library.
-
-`v0.1.0` marks the "initial" state and the beginning of the rewrite;
-`v0.2.0` will mark the completion of the rewrite.
-
 ## Techniques
 
 Techniques implemented thus far:

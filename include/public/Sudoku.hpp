@@ -121,6 +121,7 @@ class Sudoku {
 
   bool prune_locked_pointing_candidates();
 
+  [[nodiscard]] int project_euler_0096_first_three_digits() const;
   void print_puzzle() const;
   bool prune_x_wings(std::size_t n);
   static void print_puzzle(const std::vector<int> &vec);

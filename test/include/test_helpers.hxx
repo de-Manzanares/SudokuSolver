@@ -27,4 +27,29 @@ inline void attempt_solve(std::string_view filename) {
   }
 }
 
+inline void project_euler_attempt_solve(std::string_view filename) {
+  if (!std::filesystem::exists(filename)) {
+    std::cerr << "Cannot find file '" << filename << "' in search path:\n"
+              << std::filesystem::current_path();
+  }
+  if (std::ifstream in_file(filename.data()); in_file.is_open()) {
+    double count{};
+    double solved{};
+    int sum{};
+    std::string puzzle;
+    while (std::getline(in_file, puzzle)) {
+      if (Sudoku sudoku(puzzle); sudoku.solve()) {
+        sum += sudoku.project_euler_0096_first_three_digits();
+        ++solved;
+      }
+      ++count;
+    }
+    std::cout << "Solved: " << solved << '/' << count << '\t'
+              << 100.0 * solved / count << "%" << '\n';
+    std::cout << sum << '\n';
+  } else {
+    std::cerr << "Failed to open file " << filename << '\n';
+  }
+}
+
 #endif // SUDOKU_SOLVER_TEST_INCLUDE_TEST_HELPERS_CXX_

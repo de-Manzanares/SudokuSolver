@@ -1,6 +1,10 @@
 #include "Sudoku.hpp"
 #include <iostream>
 
+int Sudoku::project_euler_0096_first_three_digits() const {
+  return (_puzzle[0] * 100) + (_puzzle[1] * 10) + _puzzle[2];
+}
+
 void Sudoku::print_puzzle() const {
   for (int i = 0; i < PUZZLE_SIZE; ++i) {
     if (_puzzle[i] != 0) {

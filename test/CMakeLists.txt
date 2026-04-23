@@ -30,6 +30,7 @@ if (ENABLE_TESTS)
 
     add_executable(50k)
     add_executable(techniques)
+    add_executable(PE_0096)
 
     add_custom_target(
             copy_puzzles ALL
@@ -58,6 +59,16 @@ if (ENABLE_TESTS)
     )
     target_link_libraries(
             50k
+            PRIVATE
+            common-test-options
+    )
+    target_sources(
+            PE_0096
+            PRIVATE
+            src/PE_0096.cxx
+    )
+    target_link_libraries(
+            PE_0096
             PRIVATE
             common-test-options
     )
